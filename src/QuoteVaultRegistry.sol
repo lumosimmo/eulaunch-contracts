@@ -17,6 +17,9 @@ contract QuoteVaultRegistry is Ownable {
 
     error VaultDoesNotMatchToken();
 
+    event QuoteVaultSet(address indexed token, address indexed vault);
+    event QuoteVaultRemoved(address indexed token);
+
     constructor(address _eulerSwapFactory) {
         eulerSwapFactory = _eulerSwapFactory;
         _initializeOwner(msg.sender);
@@ -39,6 +42,7 @@ contract QuoteVaultRegistry is Ownable {
     function setQuoteVault(address token, address vault) external onlyOwner {
         _checkVault(token, vault);
         quoteVaults[token] = vault;
+        emit QuoteVaultSet(token, vault);
     }
 
     /// @notice Removes the quote vault association for a given token.
@@ -46,6 +50,7 @@ contract QuoteVaultRegistry is Ownable {
     /// @param token The address of the token whose quote vault association is to be removed.
     function removeQuoteVault(address token) external onlyOwner {
         delete quoteVaults[token];
+        emit QuoteVaultRemoved(token);
     }
 
     /// @notice Retrieves the vault address for a given quote token.
