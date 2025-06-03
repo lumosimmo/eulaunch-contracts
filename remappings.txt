@@ -3,7 +3,7 @@
 @uniswap/v4-core/=lib/euler-swap/lib/v4-periphery/lib/v4-core/
 ds-test/=lib/euler-swap/lib/ethereum-vault-connector/lib/forge-std/lib/ds-test/src/
 erc4626-tests/=lib/euler-swap/lib/openzeppelin-contracts/lib/erc4626-tests/
-ethereum-vault-connector/=lib/euler-swap/lib/ethereum-vault-connector/
+ethereum-vault-connector/=lib/euler-swap/lib/ethereum-vault-connector/src/
 euler-swap/=lib/euler-swap/
 euler-vault-kit/=lib/euler-swap/lib/euler-vault-kit/
 evc/=lib/euler-swap/lib/ethereum-vault-connector/src/
@@ -13,7 +13,7 @@ forge-gas-snapshot/=lib/euler-swap/lib/v4-periphery/lib/permit2/lib/forge-gas-sn
 forge-std/=lib/forge-std/src/
 halmos-cheatcodes/=lib/euler-swap/lib/openzeppelin-contracts/lib/halmos-cheatcodes/src/
 hardhat/=lib/euler-swap/lib/v4-periphery/lib/v4-core/node_modules/hardhat/
-openzeppelin-contracts/=lib/euler-swap/lib/openzeppelin-contracts/
+openzeppelin-contracts/=lib/euler-swap/lib/openzeppelin-contracts/contracts
 openzeppelin/=lib/euler-swap/lib/ethereum-vault-connector/lib/openzeppelin-contracts/contracts/
 permit2/=lib/euler-swap/lib/euler-vault-kit/lib/permit2/
 solady/=lib/solady/src/
