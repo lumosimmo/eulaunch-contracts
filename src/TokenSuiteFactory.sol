@@ -13,6 +13,8 @@ contract TokenSuiteFactory {
     address public immutable eulerSwapFactory;
 
     error NotEulaunchTokenAddress();
+    error NameTooLong();
+    error SymbolTooLong();
 
     event ERC20Deployed(address indexed token, address indexed to);
 
@@ -33,6 +35,9 @@ contract TokenSuiteFactory {
         external
         returns (address token)
     {
+        require(bytes(name).length < 32, NameTooLong());
+        require(bytes(symbol).length < 32, SymbolTooLong());
+
         bytes memory args = abi.encode(name, symbol, to, totalSupply);
         bytes memory initCode = abi.encodePacked(type(BasicAsset).creationCode, args);
 

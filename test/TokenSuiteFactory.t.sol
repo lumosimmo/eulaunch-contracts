@@ -14,6 +14,10 @@ contract TokenSuiteFactoryTest is EulaunchTestBase {
     address internal user1;
     address internal user2;
 
+    // We use predefined salt and address for testing purposes
+    bytes32 internal salt1 = 0x00000000000000000000000000000000000000000184568cce2890f4036e59b6;
+    address internal token1 = 0x2718ef58B01429627CC3751F1ac5e7b82578783f;
+
     function setUp() public override {
         super.setUp();
 
@@ -31,15 +35,29 @@ contract TokenSuiteFactoryTest is EulaunchTestBase {
 
     function test_DeployERC20() public {
         vm.startPrank(user1);
-        // We use predefined salt and address for testing purposes
-        bytes32 salt = bytes32(uint256(0x00000000000000000000000000000000000000000184568cce2890f4036e59b6));
-        address token = tokenSuiteFactory.deployERC20("TestAsset", "TA", user1, INITIAL_SUPPLY, salt);
+        address token = tokenSuiteFactory.deployERC20("TestAsset", "TA", user1, INITIAL_SUPPLY, salt1);
         vm.stopPrank();
-        assertEq(token, 0x2718ef58B01429627CC3751F1ac5e7b82578783f);
+        assertEq(token, token1);
         assertEq(BasicAsset(token).balanceOf(user1), INITIAL_SUPPLY);
         assertEq(BasicAsset(token).totalSupply(), INITIAL_SUPPLY);
         assertEq(BasicAsset(token).name(), "TestAsset");
         assertEq(BasicAsset(token).symbol(), "TA");
         assertEq(BasicAsset(token).decimals(), 18);
+    }
+
+    function test_DeployERC20_WhenNameTooLong_ShouldRevert() public {
+        vm.startPrank(user1);
+        string memory longName = "ThisNameIsDefinitelyWayTooLongForAnyToken";
+        vm.expectRevert(TokenSuiteFactory.NameTooLong.selector);
+        tokenSuiteFactory.deployERC20(longName, "TA", user1, INITIAL_SUPPLY, salt1);
+        vm.stopPrank();
+    }
+
+    function test_DeployERC20_WhenSymbolTooLong_ShouldRevert() public {
+        vm.startPrank(user1);
+        string memory longSymbol = "THIS SYMBOL IS WAY TOO LONG FOR ANY TOKEN";
+        vm.expectRevert(TokenSuiteFactory.SymbolTooLong.selector);
+        tokenSuiteFactory.deployERC20("TestAsset", longSymbol, user1, INITIAL_SUPPLY, salt1);
+        vm.stopPrank();
     }
 }
