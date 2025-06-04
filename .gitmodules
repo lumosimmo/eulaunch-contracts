@@ -7,3 +7,6 @@
 [submodule "lib/euler-swap"]
 	path = lib/euler-swap
 	url = https://github.com/euler-xyz/euler-swap
+[submodule "lib/evk-periphery"]
+	path = lib/evk-periphery
+	url = https://github.com/euler-xyz/evk-periphery
