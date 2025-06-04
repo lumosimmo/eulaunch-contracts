@@ -69,7 +69,7 @@ contract TokenSuiteFactory {
     /// @return vault The address of the deployed vault.
     function deployEscrowVault(address underlyingAsset) external returns (address vault) {
         bytes memory initData = abi.encodePacked(underlyingAsset, address(0), address(0));
-        vault = GenericFactory(eVaultFactory).createProxy(address(this), true, initData);
+        vault = GenericFactory(eVaultFactory).createProxy(address(0), true, initData);
         IEVault(vault).setHookConfig(address(0), 0);
         IEVault(vault).setGovernorAdmin(address(0));
 
