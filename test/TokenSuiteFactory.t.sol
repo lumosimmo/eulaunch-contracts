@@ -6,6 +6,10 @@ import {EulaunchTestBase} from "./EulaunchTestBase.t.sol";
 import {TokenSuiteFactory} from "src/TokenSuiteFactory.sol";
 import {BasicAsset} from "src/tokens/BasicAsset.sol";
 import {IEVault} from "evk/EVault/IEVault.sol";
+import {Errors} from "evk/EVault/shared/Errors.sol";
+import {SafeERC20Lib} from "evk/EVault/shared/lib/SafeERC20Lib.sol";
+import {IAllowanceTransfer} from "permit2/src/interfaces/IAllowanceTransfer.sol";
+import {ERC20} from "solady/tokens/ERC20.sol";
 
 contract TokenSuiteFactoryTest is EulaunchTestBase {
     uint256 internal constant INITIAL_SUPPLY = 1_000_000_000 ether;
@@ -142,5 +146,93 @@ contract TokenSuiteFactoryTest is EulaunchTestBase {
             withdrawTokenAmount,
             "Shares burnt do not equate to assets withdrawn"
         );
+    }
+
+    function test_DeployEscrowVault_WhenDepositMoreThanBalance_ShouldRevert() public {
+        vm.startPrank(user1);
+        address token = tokenSuiteFactory.deployERC20("TestAsset", "TA", user1, INITIAL_SUPPLY, salt1);
+        address vault = tokenSuiteFactory.deployEscrowVault(token);
+
+        uint256 badDepositAmount = INITIAL_SUPPLY + 1 ether;
+        BasicAsset(token).approve(vault, badDepositAmount);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                SafeERC20Lib.E_TransferFromFailed.selector,
+                abi.encodeWithSelector(IAllowanceTransfer.AllowanceExpired.selector, 0),
+                abi.encodeWithSelector(ERC20.InsufficientBalance.selector)
+            )
+        );
+        IEVault(vault).deposit(badDepositAmount, user1);
+        vm.stopPrank();
+    }
+
+    function test_DeployEscrowVault_WhenDepositMoreThanAllowance_ShouldRevert() public {
+        vm.startPrank(user1);
+        address token = tokenSuiteFactory.deployERC20("TestAsset", "TA", user1, INITIAL_SUPPLY, salt1);
+        address vault = tokenSuiteFactory.deployEscrowVault(token);
+
+        uint256 depositAmount = 100 ether;
+        uint256 allowance = 50 ether;
+        BasicAsset(token).approve(vault, allowance);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                SafeERC20Lib.E_TransferFromFailed.selector,
+                abi.encodeWithSelector(IAllowanceTransfer.AllowanceExpired.selector, 0),
+                abi.encodeWithSelector(ERC20.InsufficientAllowance.selector)
+            )
+        );
+        IEVault(vault).deposit(depositAmount, user1);
+        vm.stopPrank();
+    }
+
+    function test_DeployEscrowVault_WhenWithdrawMoreThanDeposited_ShouldRevert() public {
+        vm.startPrank(user1);
+        address token = tokenSuiteFactory.deployERC20("TestAsset", "TA", user1, INITIAL_SUPPLY, salt1);
+        address vault = tokenSuiteFactory.deployEscrowVault(token);
+
+        uint256 depositAmount = 100 ether;
+        BasicAsset(token).approve(vault, depositAmount);
+        IEVault(vault).deposit(depositAmount, user1);
+
+        uint256 withdrawAmount = depositAmount + 1 ether;
+        vm.expectRevert(Errors.E_InsufficientCash.selector);
+        IEVault(vault).withdraw(withdrawAmount, user1, user1);
+        vm.stopPrank();
+    }
+
+    function test_DeployEscrowVault_WhenWithdrawWithNoDeposit_ShouldRevert() public {
+        vm.startPrank(user1);
+        address token = tokenSuiteFactory.deployERC20("TestAsset", "TA", user1, INITIAL_SUPPLY, salt1);
+        address vault = tokenSuiteFactory.deployEscrowVault(token);
+
+        uint256 withdrawAmount = 100 ether;
+        vm.expectRevert(Errors.E_InsufficientCash.selector);
+        IEVault(vault).withdraw(withdrawAmount, user1, user1);
+        vm.stopPrank();
+    }
+
+    function test_DeployEscrowVault_WhenWithdrawWithWrongAccount_ShouldRevert() public {
+        vm.startPrank(user1);
+        address token = tokenSuiteFactory.deployERC20("TestAsset", "TA", user1, INITIAL_SUPPLY, salt1);
+        address vault = tokenSuiteFactory.deployEscrowVault(token);
+
+        uint256 depositAmount = 100 ether;
+        BasicAsset(token).approve(vault, depositAmount);
+        IEVault(vault).deposit(depositAmount, user1);
+        vm.stopPrank();
+
+        vm.startPrank(user2);
+        uint256 withdrawAmount = 10 ether;
+
+        // User2 should not be permitted to touch user1's shares
+        vm.expectRevert(Errors.E_InsufficientAllowance.selector);
+        IEVault(vault).withdraw(withdrawAmount, user2, user1);
+
+        // User2 does not have any shares, so they should not be able to withdraw
+        vm.expectRevert(Errors.E_InsufficientBalance.selector);
+        IEVault(vault).withdraw(withdrawAmount, user2, user2);
+        vm.stopPrank();
     }
 }
