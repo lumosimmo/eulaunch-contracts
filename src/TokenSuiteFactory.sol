@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity 0.8.27;
 
-import {EVault} from "euler-vault-kit/src/EVault/EVault.sol";
+import {GenericFactory} from "evk/GenericFactory/GenericFactory.sol";
+import {IEVault} from "evk/EVault/IEVault.sol";
+import {EscrowedCollateralPerspective} from "evk-periphery/src/Perspectives/deployed/EscrowedCollateralPerspective.sol";
 import {BasicAsset} from "./tokens/BasicAsset.sol";
 import {ICreateX} from "./vendor/ICreateX.sol";
 
@@ -11,15 +13,27 @@ import {ICreateX} from "./vendor/ICreateX.sol";
 contract TokenSuiteFactory {
     ICreateX public constant CREATEX = ICreateX(0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed);
     address public immutable eulerSwapFactory;
+    address public immutable eVaultFactory;
+    address public immutable perspective;
 
     error NotEulaunchTokenAddress();
     error NameTooLong();
     error SymbolTooLong();
+    error InvalidEulerSwapFactory();
+    error InvalidGenericFactory();
+    error InvalidEscrowedCollateralPerspective();
 
     event ERC20Deployed(address indexed token, address indexed to);
+    event EscrowVaultDeployed(address indexed vault, address indexed underlyingAsset);
 
-    constructor(address _eulerSwapFactory) {
+    constructor(address _eulerSwapFactory, address _eVaultFactory, address _perspective) {
+        require(_eulerSwapFactory != address(0), InvalidEulerSwapFactory());
+        require(_eVaultFactory != address(0), InvalidGenericFactory());
+        require(_perspective != address(0), InvalidEscrowedCollateralPerspective());
+
         eulerSwapFactory = _eulerSwapFactory;
+        eVaultFactory = _eVaultFactory;
+        perspective = _perspective;
     }
 
     /// @notice Deterministically deploys a standard immutable ERC20 token.
@@ -47,5 +61,20 @@ contract TokenSuiteFactory {
         require(uint160(token) >> 144 == 0x2718, NotEulaunchTokenAddress());
 
         emit ERC20Deployed(token, to);
+    }
+
+    /// @notice Deploy an escrow vault for a given underlying asset.
+    /// @dev The escrow vault is a simple vault that holds the underlying asset and does not allow borrowing.
+    /// @param underlyingAsset The address of the underlying asset.
+    /// @return vault The address of the deployed vault.
+    function deployEscrowVault(address underlyingAsset) external returns (address vault) {
+        bytes memory initData = abi.encodePacked(underlyingAsset, address(0), address(0));
+        vault = GenericFactory(eVaultFactory).createProxy(address(this), true, initData);
+        IEVault(vault).setHookConfig(address(0), 0);
+        IEVault(vault).setGovernorAdmin(address(0));
+
+        EscrowedCollateralPerspective(perspective).perspectiveVerify(vault, true);
+
+        emit EscrowVaultDeployed(vault, underlyingAsset);
     }
 }

@@ -29,7 +29,7 @@ contract TokenSuiteFactoryTest is EulaunchTestBase {
         vm.label(user2, "User2");
 
         vm.startPrank(deployer);
-        tokenSuiteFactory = new TokenSuiteFactory(address(eulerSwapFactory));
+        tokenSuiteFactory = new TokenSuiteFactory(address(eulerSwapFactory), address(factory), address(perspective));
         vm.stopPrank();
     }
 
