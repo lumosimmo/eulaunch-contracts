@@ -5,6 +5,7 @@ import {Test, console} from "forge-std/Test.sol";
 import {EulaunchTestBase} from "./EulaunchTestBase.t.sol";
 import {TokenSuiteFactory} from "src/TokenSuiteFactory.sol";
 import {BasicAsset} from "src/tokens/BasicAsset.sol";
+import {IEVault} from "evk/EVault/IEVault.sol";
 
 contract TokenSuiteFactoryTest is EulaunchTestBase {
     uint256 internal constant INITIAL_SUPPLY = 1_000_000_000 ether;
@@ -61,5 +62,20 @@ contract TokenSuiteFactoryTest is EulaunchTestBase {
         vm.expectRevert(TokenSuiteFactory.SymbolTooLong.selector);
         tokenSuiteFactory.deployERC20("TestAsset", longSymbol, user1, INITIAL_SUPPLY, salt1);
         vm.stopPrank();
+    }
+
+    function test_DeployEscrowVault() public {
+        vm.startPrank(user1);
+        address token = tokenSuiteFactory.deployERC20("TestAsset", "TA", user1, INITIAL_SUPPLY, salt1);
+        address vault = tokenSuiteFactory.deployEscrowVault(token);
+        vm.stopPrank();
+        assertTrue(vault != address(0), "Vault address should not be zero");
+        assertEq(IEVault(vault).asset(), token, "Vault asset mismatch");
+        assertTrue(perspective.isVerified(vault), "Vault not verified by perspective");
+        assertEq(IEVault(vault).governorAdmin(), address(0), "Vault governor not renounced");
+
+        (address hookTarget, uint32 hookedOps) = IEVault(vault).hookConfig();
+        assertEq(hookTarget, address(0), "Hook target not address(0)");
+        assertEq(hookedOps, 0, "Hooked ops not 0");
     }
 }
