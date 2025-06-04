@@ -17,6 +17,8 @@ contract TokenSuiteFactoryTest is EulaunchTestBase {
     // We use predefined salt and address for testing purposes
     bytes32 internal salt1 = 0x00000000000000000000000000000000000000000184568cce2890f4036e59b6;
     address internal token1 = 0x2718ef58B01429627CC3751F1ac5e7b82578783f;
+    bytes32 internal salt2 = 0x0000000000000000000000000000000000000000015ca316f75cb2f1030a8960;
+    address internal token2 = 0x27181d370eEACbAd5Abd3AE0432685f559111325;
 
     function setUp() public override {
         super.setUp();
