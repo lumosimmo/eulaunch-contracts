@@ -11,32 +11,32 @@ import {EulerSwapFactory} from "euler-swap/src/EulerSwapFactory.sol";
 
 contract QuoteVaultRegistryTest is EulaunchTestBase {
     QuoteVaultRegistry internal registry;
-    address internal owner;
+    address internal deployer;
     address internal user1;
     address internal user2;
 
     function setUp() public override {
         super.setUp();
 
-        owner = address(this);
-        vm.label(owner, "Owner");
+        deployer = address(this);
+        vm.label(deployer, "Deployer");
         user1 = vm.addr(2);
         vm.label(user1, "User1");
         user2 = vm.addr(3);
         vm.label(user2, "User2");
 
-        vm.startPrank(owner);
+        vm.startPrank(deployer);
         registry = new QuoteVaultRegistry(address(eulerSwapFactory));
         vm.stopPrank();
     }
 
     function test_Constructor() public view {
         assertEq(registry.eulerSwapFactory(), address(eulerSwapFactory));
-        assertEq(registry.owner(), owner);
+        assertEq(registry.owner(), deployer);
     }
 
     function test_SetQuoteVault_Success() public {
-        vm.startPrank(owner);
+        vm.startPrank(deployer);
         registry.setQuoteVault(address(assetTST), address(eTST));
         vm.stopPrank();
 
@@ -51,7 +51,7 @@ contract QuoteVaultRegistryTest is EulaunchTestBase {
     }
 
     function test_SetQuoteVault_WhenVaultDoesNotMatchToken_ShouldRevert() public {
-        vm.startPrank(owner);
+        vm.startPrank(deployer);
         // eTST2 is a vault for assetTST2, not assetTST
         vm.expectRevert(QuoteVaultRegistry.VaultDoesNotMatchToken.selector);
         registry.setQuoteVault(address(assetTST), address(eTST2));
@@ -62,7 +62,7 @@ contract QuoteVaultRegistryTest is EulaunchTestBase {
         address invalidVault = vm.addr(99);
         vm.label(invalidVault, "InvalidVault");
 
-        vm.startPrank(owner);
+        vm.startPrank(deployer);
         vm.expectRevert(EulerSwapFactory.InvalidVaultImplementation.selector);
         registry.setQuoteVault(address(assetTST), invalidVault);
         vm.stopPrank();
@@ -77,7 +77,7 @@ contract QuoteVaultRegistryTest is EulaunchTestBase {
         newValidVaultForAssetTST.setMaxLiquidationDiscount(0.2e4);
         newValidVaultForAssetTST.setFeeReceiver(feeReceiver);
 
-        vm.startPrank(owner);
+        vm.startPrank(deployer);
         registry.setQuoteVault(address(assetTST), address(eTST));
         assertEq(registry.quoteVaults(address(assetTST)), address(eTST));
 
@@ -88,7 +88,7 @@ contract QuoteVaultRegistryTest is EulaunchTestBase {
     }
 
     function test_RemoveQuoteVault_Success() public {
-        vm.startPrank(owner);
+        vm.startPrank(deployer);
         registry.setQuoteVault(address(assetTST), address(eTST));
         assertEq(registry.quoteVaults(address(assetTST)), address(eTST), "Pre-condition failed: Vault not set");
 
@@ -99,7 +99,7 @@ contract QuoteVaultRegistryTest is EulaunchTestBase {
     }
 
     function test_RemoveQuoteVault_WhenNotOwner_ShouldRevert() public {
-        vm.startPrank(owner);
+        vm.startPrank(deployer);
         registry.setQuoteVault(address(assetTST), address(eTST)); // Ensure vault exists
         vm.stopPrank();
 
@@ -113,7 +113,7 @@ contract QuoteVaultRegistryTest is EulaunchTestBase {
         assertEq(registry.quoteVaults(address(assetTST)), address(0), "Initial state should be no vault for assetTST");
 
         // Removing a non-existent vault should not revert
-        vm.startPrank(owner);
+        vm.startPrank(deployer);
         registry.removeQuoteVault(address(assetTST));
         vm.stopPrank();
 
@@ -121,7 +121,7 @@ contract QuoteVaultRegistryTest is EulaunchTestBase {
     }
 
     function test_GetQuoteVault_Success() public {
-        vm.startPrank(owner);
+        vm.startPrank(deployer);
         registry.setQuoteVault(address(assetTST), address(eTST));
         vm.stopPrank();
 
@@ -130,7 +130,7 @@ contract QuoteVaultRegistryTest is EulaunchTestBase {
     }
 
     function test_Ownable_TransferOwnership_Success() public {
-        vm.startPrank(owner);
+        vm.startPrank(deployer);
         registry.transferOwnership(user1);
         vm.stopPrank();
         assertEq(registry.owner(), user1);
@@ -149,7 +149,7 @@ contract QuoteVaultRegistryTest is EulaunchTestBase {
     }
 
     function test_Ownable_RenounceOwnership_Success() public {
-        vm.startPrank(owner);
+        vm.startPrank(deployer);
         registry.renounceOwnership();
         vm.stopPrank();
         assertEq(registry.owner(), address(0));
