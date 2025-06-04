@@ -78,4 +78,69 @@ contract TokenSuiteFactoryTest is EulaunchTestBase {
         assertEq(hookTarget, address(0), "Hook target not address(0)");
         assertEq(hookedOps, 0, "Hooked ops not 0");
     }
+
+    function test_DeployEscrowVault_ShouldAllowDeposit() public {
+        vm.startPrank(user1);
+        address token = tokenSuiteFactory.deployERC20("TestAsset", "TA", user1, INITIAL_SUPPLY, salt1);
+        address vault = tokenSuiteFactory.deployEscrowVault(token);
+
+        uint256 depositAmount = 100 ether;
+        BasicAsset(token).approve(vault, depositAmount);
+        uint256 sharesReceived = IEVault(vault).deposit(depositAmount, user1);
+
+        vm.stopPrank();
+
+        assertEq(
+            BasicAsset(token).balanceOf(user1),
+            INITIAL_SUPPLY - depositAmount,
+            "User token balance incorrect after deposit"
+        );
+        assertEq(IEVault(vault).totalAssets(), depositAmount, "Vault total assets incorrect after deposit");
+        assertEq(IEVault(vault).balanceOf(user1), sharesReceived, "User share balance incorrect after deposit");
+        // Shares should equal assets deposited for escrow vaults
+        assertEq(
+            IEVault(vault).convertToAssets(sharesReceived),
+            depositAmount,
+            "Shares received do not equate to assets deposited"
+        );
+        assertEq(BasicAsset(token).balanceOf(vault), depositAmount, "Vault token balance incorrect after deposit");
+    }
+
+    function test_DeployEscrowVault_ShouldAllowWithdraw() public {
+        vm.startPrank(user1);
+        address token = tokenSuiteFactory.deployERC20("TestAsset", "TA", user1, INITIAL_SUPPLY, salt1);
+        address vault = tokenSuiteFactory.deployEscrowVault(token);
+
+        uint256 depositAmount = 200 ether;
+        BasicAsset(token).approve(vault, depositAmount);
+        IEVault(vault).deposit(depositAmount, user1);
+        uint256 userSharesBeforeWithdraw = IEVault(vault).balanceOf(user1);
+        uint256 userTokensBeforeWithdraw = BasicAsset(token).balanceOf(user1);
+
+        uint256 withdrawTokenAmount = 100 ether;
+        uint256 sharesBurnt = IEVault(vault).withdraw(withdrawTokenAmount, user1, user1);
+
+        vm.stopPrank();
+
+        assertEq(
+            BasicAsset(token).balanceOf(user1),
+            userTokensBeforeWithdraw + withdrawTokenAmount,
+            "User token balance incorrect after withdraw"
+        );
+        assertEq(
+            IEVault(vault).totalAssets(),
+            depositAmount - withdrawTokenAmount,
+            "Vault total assets incorrect after withdraw"
+        );
+        assertEq(
+            IEVault(vault).balanceOf(user1),
+            userSharesBeforeWithdraw - sharesBurnt,
+            "User share balance incorrect after withdraw"
+        );
+        assertEq(
+            IEVault(vault).convertToAssets(sharesBurnt),
+            withdrawTokenAmount,
+            "Shares burnt do not equate to assets withdrawn"
+        );
+    }
 }
