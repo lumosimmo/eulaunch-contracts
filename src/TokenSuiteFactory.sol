@@ -8,30 +8,26 @@ import {BasicAsset} from "./tokens/BasicAsset.sol";
 import {ICreateX} from "./vendor/ICreateX.sol";
 
 /// @title TokenSuiteFactory
-/// @notice A factory for deploying ERC20 and basic EVaults to hold tokens for EulerSwap.
-/// @dev This factory deploys basic EVaults without borrowing or lending features.
+/// @notice A factory for deploying ERC20 and basic "escrow vaults" to hold tokens.
+/// @dev The escrow vaults are basic EVaults without borrowing or lending features.
 contract TokenSuiteFactory {
     ICreateX public constant CREATEX = ICreateX(0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed);
-    address public immutable eulerSwapFactory;
     address public immutable eVaultFactory;
     address public immutable perspective;
 
     error NotEulaunchTokenAddress();
     error NameTooLong();
     error SymbolTooLong();
-    error InvalidEulerSwapFactory();
     error InvalidGenericFactory();
     error InvalidEscrowedCollateralPerspective();
 
     event ERC20Deployed(address indexed token, address indexed to);
     event EscrowVaultDeployed(address indexed vault, address indexed underlyingAsset);
 
-    constructor(address _eulerSwapFactory, address _eVaultFactory, address _perspective) {
-        require(_eulerSwapFactory != address(0), InvalidEulerSwapFactory());
+    constructor(address _eVaultFactory, address _perspective) {
         require(_eVaultFactory != address(0), InvalidGenericFactory());
         require(_perspective != address(0), InvalidEscrowedCollateralPerspective());
 
-        eulerSwapFactory = _eulerSwapFactory;
         eVaultFactory = _eVaultFactory;
         perspective = _perspective;
     }
