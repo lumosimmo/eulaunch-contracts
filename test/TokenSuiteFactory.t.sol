@@ -3,7 +3,7 @@ pragma solidity 0.8.27;
 
 import {Test, console} from "forge-std/Test.sol";
 import {EulaunchTestBase} from "./EulaunchTestBase.t.sol";
-import {TokenSuiteFactory} from "src/TokenSuiteFactory.sol";
+import {TokenSuiteFactory, ERC20Params} from "src/TokenSuiteFactory.sol";
 import {BasicAsset} from "src/tokens/BasicAsset.sol";
 import {IEVault} from "evk/EVault/IEVault.sol";
 import {Errors} from "evk/EVault/shared/Errors.sol";
@@ -36,13 +36,14 @@ contract TokenSuiteFactoryTest is EulaunchTestBase {
         vm.label(user2, "User2");
 
         vm.startPrank(deployer);
-        tokenSuiteFactory = new TokenSuiteFactory(address(eulerSwapFactory), address(factory), address(perspective));
+        tokenSuiteFactory = new TokenSuiteFactory(address(factory), address(perspective));
         vm.stopPrank();
     }
 
     function test_DeployERC20() public {
         vm.startPrank(user1);
-        address token = tokenSuiteFactory.deployERC20("TestAsset", "TA", user1, INITIAL_SUPPLY, salt1);
+        ERC20Params memory params = ERC20Params({name: "TestAsset", symbol: "TA", totalSupply: INITIAL_SUPPLY});
+        address token = tokenSuiteFactory.deployERC20(params, user1, salt1);
         vm.stopPrank();
         assertEq(token, token1);
         assertEq(BasicAsset(token).balanceOf(user1), INITIAL_SUPPLY);
@@ -56,7 +57,8 @@ contract TokenSuiteFactoryTest is EulaunchTestBase {
         vm.startPrank(user1);
         string memory longName = "ThisNameIsDefinitelyWayTooLongForAnyToken";
         vm.expectRevert(TokenSuiteFactory.NameTooLong.selector);
-        tokenSuiteFactory.deployERC20(longName, "TA", user1, INITIAL_SUPPLY, salt1);
+        ERC20Params memory params = ERC20Params({name: longName, symbol: "TA", totalSupply: INITIAL_SUPPLY});
+        tokenSuiteFactory.deployERC20(params, user1, salt1);
         vm.stopPrank();
     }
 
@@ -64,13 +66,15 @@ contract TokenSuiteFactoryTest is EulaunchTestBase {
         vm.startPrank(user1);
         string memory longSymbol = "THIS SYMBOL IS WAY TOO LONG FOR ANY TOKEN";
         vm.expectRevert(TokenSuiteFactory.SymbolTooLong.selector);
-        tokenSuiteFactory.deployERC20("TestAsset", longSymbol, user1, INITIAL_SUPPLY, salt1);
+        ERC20Params memory params = ERC20Params({name: "TestAsset", symbol: longSymbol, totalSupply: INITIAL_SUPPLY});
+        tokenSuiteFactory.deployERC20(params, user1, salt1);
         vm.stopPrank();
     }
 
     function test_DeployEscrowVault() public {
         vm.startPrank(user1);
-        address token = tokenSuiteFactory.deployERC20("TestAsset", "TA", user1, INITIAL_SUPPLY, salt1);
+        ERC20Params memory params = ERC20Params({name: "TestAsset", symbol: "TA", totalSupply: INITIAL_SUPPLY});
+        address token = tokenSuiteFactory.deployERC20(params, user1, salt1);
         address vault = tokenSuiteFactory.deployEscrowVault(token);
         vm.stopPrank();
         assertTrue(vault != address(0), "Vault address should not be zero");
@@ -85,7 +89,8 @@ contract TokenSuiteFactoryTest is EulaunchTestBase {
 
     function test_DeployEscrowVault_ShouldAllowDeposit() public {
         vm.startPrank(user1);
-        address token = tokenSuiteFactory.deployERC20("TestAsset", "TA", user1, INITIAL_SUPPLY, salt1);
+        ERC20Params memory params = ERC20Params({name: "TestAsset", symbol: "TA", totalSupply: INITIAL_SUPPLY});
+        address token = tokenSuiteFactory.deployERC20(params, user1, salt1);
         address vault = tokenSuiteFactory.deployEscrowVault(token);
 
         uint256 depositAmount = 100 ether;
@@ -112,7 +117,8 @@ contract TokenSuiteFactoryTest is EulaunchTestBase {
 
     function test_DeployEscrowVault_ShouldAllowWithdraw() public {
         vm.startPrank(user1);
-        address token = tokenSuiteFactory.deployERC20("TestAsset", "TA", user1, INITIAL_SUPPLY, salt1);
+        ERC20Params memory params = ERC20Params({name: "TestAsset", symbol: "TA", totalSupply: INITIAL_SUPPLY});
+        address token = tokenSuiteFactory.deployERC20(params, user1, salt1);
         address vault = tokenSuiteFactory.deployEscrowVault(token);
 
         uint256 depositAmount = 200 ether;
@@ -150,7 +156,8 @@ contract TokenSuiteFactoryTest is EulaunchTestBase {
 
     function test_DeployEscrowVault_WhenDepositMoreThanBalance_ShouldRevert() public {
         vm.startPrank(user1);
-        address token = tokenSuiteFactory.deployERC20("TestAsset", "TA", user1, INITIAL_SUPPLY, salt1);
+        ERC20Params memory params = ERC20Params({name: "TestAsset", symbol: "TA", totalSupply: INITIAL_SUPPLY});
+        address token = tokenSuiteFactory.deployERC20(params, user1, salt1);
         address vault = tokenSuiteFactory.deployEscrowVault(token);
 
         uint256 badDepositAmount = INITIAL_SUPPLY + 1 ether;
@@ -169,7 +176,8 @@ contract TokenSuiteFactoryTest is EulaunchTestBase {
 
     function test_DeployEscrowVault_WhenDepositMoreThanAllowance_ShouldRevert() public {
         vm.startPrank(user1);
-        address token = tokenSuiteFactory.deployERC20("TestAsset", "TA", user1, INITIAL_SUPPLY, salt1);
+        ERC20Params memory params = ERC20Params({name: "TestAsset", symbol: "TA", totalSupply: INITIAL_SUPPLY});
+        address token = tokenSuiteFactory.deployERC20(params, user1, salt1);
         address vault = tokenSuiteFactory.deployEscrowVault(token);
 
         uint256 depositAmount = 100 ether;
@@ -189,7 +197,8 @@ contract TokenSuiteFactoryTest is EulaunchTestBase {
 
     function test_DeployEscrowVault_WhenWithdrawMoreThanDeposited_ShouldRevert() public {
         vm.startPrank(user1);
-        address token = tokenSuiteFactory.deployERC20("TestAsset", "TA", user1, INITIAL_SUPPLY, salt1);
+        ERC20Params memory params = ERC20Params({name: "TestAsset", symbol: "TA", totalSupply: INITIAL_SUPPLY});
+        address token = tokenSuiteFactory.deployERC20(params, user1, salt1);
         address vault = tokenSuiteFactory.deployEscrowVault(token);
 
         uint256 depositAmount = 100 ether;
@@ -204,7 +213,8 @@ contract TokenSuiteFactoryTest is EulaunchTestBase {
 
     function test_DeployEscrowVault_WhenWithdrawWithNoDeposit_ShouldRevert() public {
         vm.startPrank(user1);
-        address token = tokenSuiteFactory.deployERC20("TestAsset", "TA", user1, INITIAL_SUPPLY, salt1);
+        ERC20Params memory params = ERC20Params({name: "TestAsset", symbol: "TA", totalSupply: INITIAL_SUPPLY});
+        address token = tokenSuiteFactory.deployERC20(params, user1, salt1);
         address vault = tokenSuiteFactory.deployEscrowVault(token);
 
         uint256 withdrawAmount = 100 ether;
@@ -215,7 +225,8 @@ contract TokenSuiteFactoryTest is EulaunchTestBase {
 
     function test_DeployEscrowVault_WhenWithdrawWithWrongAccount_ShouldRevert() public {
         vm.startPrank(user1);
-        address token = tokenSuiteFactory.deployERC20("TestAsset", "TA", user1, INITIAL_SUPPLY, salt1);
+        ERC20Params memory params = ERC20Params({name: "TestAsset", symbol: "TA", totalSupply: INITIAL_SUPPLY});
+        address token = tokenSuiteFactory.deployERC20(params, user1, salt1);
         address vault = tokenSuiteFactory.deployEscrowVault(token);
 
         uint256 depositAmount = 100 ether;

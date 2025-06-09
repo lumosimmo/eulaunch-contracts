@@ -7,6 +7,13 @@ import {IPerspective} from "./vendor/IPerspective.sol";
 import {BasicAsset} from "./tokens/BasicAsset.sol";
 import {ICreateX} from "./vendor/ICreateX.sol";
 
+/// @notice Parameters for deploying an ERC20 token with TokenSuiteFactory.
+struct ERC20Params {
+    string name;
+    string symbol;
+    uint256 totalSupply;
+}
+
 /// @title TokenSuiteFactory
 /// @notice A factory for deploying ERC20 and basic "escrow vaults" to hold tokens.
 /// @dev The escrow vaults are basic EVaults without borrowing or lending features.
@@ -34,21 +41,16 @@ contract TokenSuiteFactory {
 
     /// @notice Deterministically deploys a standard immutable ERC20 token.
     /// @dev The CREATEX factory is used to deploy the token to deterministic address.
-    /// @param name The name of the token.
-    /// @param symbol The symbol of the token.
+    /// @param params The parameters for the ERC20 token.
     /// @param to The address to mint the initial supply of the token to.
-    /// @param totalSupply The total supply of the token.
     /// @param salt The salt for the CREATE3 deployment via CREATEX. MUST have crosschain deployment protection
     ///             and can have permissioned deploy protection. These are not enforced.
     /// @return token The address of the deployed token, always starting with 0x2718 (Leonhard will be proud).
-    function deployERC20(string memory name, string memory symbol, address to, uint256 totalSupply, bytes32 salt)
-        external
-        returns (address token)
-    {
-        require(bytes(name).length < 32, NameTooLong());
-        require(bytes(symbol).length < 32, SymbolTooLong());
+    function deployERC20(ERC20Params memory params, address to, bytes32 salt) external returns (address token) {
+        require(bytes(params.name).length < 32, NameTooLong());
+        require(bytes(params.symbol).length < 32, SymbolTooLong());
 
-        bytes memory args = abi.encode(name, symbol, to, totalSupply);
+        bytes memory args = abi.encode(params.name, params.symbol, to, params.totalSupply);
         bytes memory initCode = abi.encodePacked(type(BasicAsset).creationCode, args);
 
         // The CREATEX salts we use MUST have crosschain deployment protection to mitigate this on L2s.
