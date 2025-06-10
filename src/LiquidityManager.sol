@@ -201,15 +201,4 @@ contract LiquidityManager is Ownable {
         quoteAmount = IEVault(quoteVault).withdraw(maxWithdrawQuote, to, address(this));
         emit Withdrawn(baseToken, quoteToken, to, baseAmount, quoteAmount);
     }
-
-    /// @notice Executes any transaction on behalf of this LiquidityManager.
-    /// @dev The LiquidityManager is fully owned by the owner so this function is useful for future-proofing.
-    /// @param target The address of the contract to call.
-    /// @param data The data to call the contract with.
-    /// @param value The value to send with the call.
-    // aderyn-ignore-next-line(centralization-risk)
-    function execTransaction(address target, bytes calldata data, uint256 value) external onlyOwner {
-        (bool success, bytes memory reason) = target.call{value: value}(data);
-        require(success, string(reason));
-    }
 }
