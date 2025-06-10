@@ -48,7 +48,8 @@ contract LiquidityManager is Ownable {
     address public immutable baseVault;
     address public immutable quoteVault;
 
-    bool public initialized;
+    bool public initialized_;
+    address public eulerSwap_;
 
     error NotEulaunch();
 
@@ -97,13 +98,14 @@ contract LiquidityManager is Ownable {
     /// @param protocolFeeParams The parameters for the protocol fee.
     /// @param salt The salt for the EulerSwap instance. Not to be confused with the salt in `TokenSuiteFactory.deployERC20()`.
     /// @return baseShares The number of shares of the base token in the base vault. This should equal to `initialReserveBase`.
+    /// @return eulerSwap The address of the EulerSwap instance deployed.
     function initialize(
         CurveParams memory curveParams,
         uint112 initialReserveBase,
         uint256 fee,
         ProtocolFeeParams memory protocolFeeParams,
         bytes32 salt
-    ) external onlyEulaunch notInitialized returns (uint256 baseShares) {
+    ) external onlyEulaunch notInitialized returns (uint256 baseShares, address eulerSwap) {
         baseShares = _handleBase(baseToken, baseVault, initialReserveBase);
 
         bool switcheroo = baseToken > quoteToken;
@@ -122,7 +124,8 @@ contract LiquidityManager is Ownable {
             protocolFee: protocolFeeParams.protocolFee,
             protocolFeeRecipient: protocolFeeParams.protocolFeeRecipient
         });
-        address predictedAddress = EulerSwapFactory(eulerSwapFactory).computePoolAddress(poolParams, salt);
+        // aderyn-ignore-next-line(reentrancy-state-change)
+        eulerSwap = EulerSwapFactory(eulerSwapFactory).computePoolAddress(poolParams, salt);
 
         IEulerSwap.InitialState memory initialState = IEulerSwap.InitialState({
             currReserve0: switcheroo ? 0 : initialReserveBase,
@@ -134,7 +137,7 @@ contract LiquidityManager is Ownable {
             onBehalfOfAccount: address(0),
             targetContract: address(evc),
             value: 0,
-            data: abi.encodeCall(IEVC.setAccountOperator, (address(this), predictedAddress, true))
+            data: abi.encodeCall(IEVC.setAccountOperator, (address(this), eulerSwap, true))
         });
         items[1] = IEVC.BatchItem({
             onBehalfOfAccount: address(this),
@@ -143,8 +146,10 @@ contract LiquidityManager is Ownable {
             data: abi.encodeCall(EulerSwapFactory.deployPool, (poolParams, initialState, salt))
         });
 
+        // aderyn-ignore-next-line(reentrancy-state-change)
         IEVC(evc).batch(items);
-        emit EulerSwapDeployed(predictedAddress);
+        eulerSwap_ = eulerSwap;
+        emit EulerSwapDeployed(eulerSwap);
     }
 
     function _handleBase(address token, address vault, uint256 amount) internal returns (uint256 shares) {
@@ -157,6 +162,7 @@ contract LiquidityManager is Ownable {
     /// @param target The address of the contract to call.
     /// @param data The data to call the contract with.
     /// @param value The value to send with the call.
+    // aderyn-ignore-next-line(centralization-risk)
     function execTransaction(address target, bytes calldata data, uint256 value) external onlyOwner {
         (bool success, bytes memory reason) = target.call{value: value}(data);
         require(success, string(reason));
