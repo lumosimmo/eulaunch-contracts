@@ -38,7 +38,7 @@ struct ProtocolFeeParams {
 
 /// @title Liquidity Manager
 /// @notice A liquidity manager for EulerSwap. It owns the EulerSwap instance, and is fully owned by an owner.
-// aderyn-ignore-next-line(centralization-risk)
+// aderyn-ignore-next-line(centralization-risk, contract-locks-ether)
 contract LiquidityManager is Ownable {
     address public immutable eulaunch;
     address public immutable evc;
@@ -98,6 +98,7 @@ contract LiquidityManager is Ownable {
         emit Initialized(baseToken, quoteToken);
     }
 
+    // aderyn-ignore-next-line(modifier-used-only-once)
     modifier onlyCloseOnce() {
         require(!closed_, AlreadyClosed());
         closed_ = true;
