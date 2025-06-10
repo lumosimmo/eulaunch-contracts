@@ -51,6 +51,7 @@ contract TokenSuiteFactory {
         require(bytes(params.symbol).length < 32, SymbolTooLong());
 
         bytes memory args = abi.encode(params.name, params.symbol, to, params.totalSupply);
+        // aderyn-ignore-next-line(abi-encode-packed-hash-collision)
         bytes memory initCode = abi.encodePacked(type(BasicAsset).creationCode, args);
 
         // The CREATEX salts we use MUST have crosschain deployment protection to mitigate this on L2s.

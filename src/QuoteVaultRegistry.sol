@@ -11,6 +11,7 @@ import {EVault} from "euler-vault-kit/src/EVault/EVault.sol";
 /// @dev This contract allows the owner to set, remove, and retrieve EVault addresses that
 ///      are designated as quote vaults for specific underlying tokens. The validity of the
 ///      vault is checked upon setting. Each token can only have one vault associated with it.
+// aderyn-ignore-next-line(centralization-risk, contract-locks-ether)
 contract QuoteVaultRegistry is Ownable {
     address public immutable eulerSwapFactory;
     mapping(address token => address vault) public quoteVaults;
@@ -39,6 +40,7 @@ contract QuoteVaultRegistry is Ownable {
     /// @dev Can only be called by the owner.
     /// @param token The address of the token.
     /// @param vault The address of the EVault to be set as the quote vault for the token.
+    // aderyn-ignore-next-line(centralization-risk)
     function setQuoteVault(address token, address vault) external onlyOwner {
         _checkVault(token, vault);
         quoteVaults[token] = vault;
@@ -48,6 +50,7 @@ contract QuoteVaultRegistry is Ownable {
     /// @notice Removes the quote vault association for a given token.
     /// @dev Can only be called by the owner.
     /// @param token The address of the token whose quote vault association is to be removed.
+    // aderyn-ignore-next-line(centralization-risk)
     function removeQuoteVault(address token) external onlyOwner {
         delete quoteVaults[token];
         emit QuoteVaultRemoved(token);

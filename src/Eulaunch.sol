@@ -58,6 +58,7 @@ contract Eulaunch {
 
         SafeTransferLib.safeApprove(baseToken, address(liquidityManager), tokenParams.totalSupply);
 
+        // aderyn-ignore-next-line(unchecked-return)
         liquidityManager.initialize(curveParams, uint112(tokenParams.totalSupply), fee, protocolFeeParams, hookSalt);
     }
 

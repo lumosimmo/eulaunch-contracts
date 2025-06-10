@@ -38,6 +38,7 @@ struct ProtocolFeeParams {
 
 /// @title Liquidity Manager
 /// @notice A liquidity manager for EulerSwap. It owns the EulerSwap instance, and is fully owned by an owner.
+// aderyn-ignore-next-line(centralization-risk)
 contract LiquidityManager is Ownable {
     address public immutable eulaunch;
     address public immutable evc;
