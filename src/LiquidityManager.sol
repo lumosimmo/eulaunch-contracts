@@ -49,12 +49,22 @@ contract LiquidityManager is Ownable {
     address public immutable quoteVault;
 
     bool public initialized_;
+    bool public closed_;
     address public eulerSwap_;
 
     error NotEulaunch();
+    error AlreadyClosed();
 
     event Initialized(address indexed baseToken, address indexed quoteToken);
     event EulerSwapDeployed(address indexed eulerSwap);
+    event Closed(address indexed baseToken, address indexed quoteToken, address indexed eulerSwap);
+    event Withdrawn(
+        address indexed baseToken,
+        address indexed quoteToken,
+        address indexed to,
+        uint256 baseAmount,
+        uint256 quoteAmount
+    );
 
     /// @notice Constructor for the liquidity manager.
     /// @param _evc The address of the Ethereum Vault Connector.
@@ -81,11 +91,18 @@ contract LiquidityManager is Ownable {
     }
 
     // aderyn-ignore-next-line(modifier-used-only-once)
-    modifier notInitialized() {
+    modifier onlyInitializeOnce() {
         require(!initialized_, AlreadyInitialized());
         initialized_ = true;
         _;
         emit Initialized(baseToken, quoteToken);
+    }
+
+    modifier onlyCloseOnce() {
+        require(!closed_, AlreadyClosed());
+        closed_ = true;
+        _;
+        emit Closed(baseToken, quoteToken, eulerSwap_);
     }
 
     /// @notice Initializes the liquidity manager by funding the base vault and deploying the EulerSwap instance.
@@ -99,13 +116,14 @@ contract LiquidityManager is Ownable {
     /// @param salt The salt for the EulerSwap instance. Not to be confused with the salt in `TokenSuiteFactory.deployERC20()`.
     /// @return baseShares The number of shares of the base token in the base vault. This should equal to `initialReserveBase`.
     /// @return eulerSwap The address of the EulerSwap instance deployed.
+
     function initialize(
         CurveParams memory curveParams,
         uint112 initialReserveBase,
         uint256 fee,
         ProtocolFeeParams memory protocolFeeParams,
         bytes32 salt
-    ) external onlyEulaunch notInitialized returns (uint256 baseShares, address eulerSwap) {
+    ) external onlyEulaunch onlyInitializeOnce returns (uint256 baseShares, address eulerSwap) {
         baseShares = _handleBase(baseToken, baseVault, initialReserveBase);
 
         bool switcheroo = baseToken > quoteToken;
@@ -155,6 +173,36 @@ contract LiquidityManager is Ownable {
     function _handleBase(address token, address vault, uint256 amount) internal returns (uint256 shares) {
         SafeTransferLib.safeApprove(token, vault, amount);
         shares = IEVault(vault).deposit(amount, address(this));
+    }
+
+    /// @notice Closes the liquidity manager by uninstalling the EulerSwap instance and withdrawing all the base/quote tokens to the given address.
+    /// @dev This function is only callable by the owner.
+    /// @param to The address to withdraw the base/quote tokens to.
+    /// @return baseAmount The amount of base tokens withdrawn.
+    /// @return quoteAmount The amount of quote tokens withdrawn.
+    // aderyn-ignore-next-line(centralization-risk)
+    function close(address to) external onlyOwner onlyCloseOnce returns (uint256 baseAmount, uint256 quoteAmount) {
+        IEVC.BatchItem[] memory items = new IEVC.BatchItem[](2);
+        items[0] = IEVC.BatchItem({
+            targetContract: address(evc),
+            onBehalfOfAccount: address(0),
+            value: 0,
+            data: abi.encodeCall(IEVC.setAccountOperator, (address(this), eulerSwap_, false))
+        });
+        items[1] = IEVC.BatchItem({
+            targetContract: address(eulerSwapFactory),
+            onBehalfOfAccount: address(this),
+            value: 0,
+            data: abi.encodeCall(EulerSwapFactory.uninstallPool, ())
+        });
+        IEVC(evc).batch(items);
+
+        uint256 maxWithdrawBase = IEVault(baseVault).maxWithdraw(address(this));
+        uint256 maxWithdrawQuote = IEVault(quoteVault).maxWithdraw(address(this));
+
+        baseAmount = IEVault(baseVault).withdraw(maxWithdrawBase, to, address(this));
+        quoteAmount = IEVault(quoteVault).withdraw(maxWithdrawQuote, to, address(this));
+        emit Withdrawn(baseToken, quoteToken, to, baseAmount, quoteAmount);
     }
 
     /// @notice Executes any transaction on behalf of this LiquidityManager.
