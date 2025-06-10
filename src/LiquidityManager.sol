@@ -81,9 +81,9 @@ contract LiquidityManager is Ownable {
 
     // aderyn-ignore-next-line(modifier-used-only-once)
     modifier notInitialized() {
-        require(!initialized, AlreadyInitialized());
+        require(!initialized_, AlreadyInitialized());
+        initialized_ = true;
         _;
-        initialized = true;
         emit Initialized(baseToken, quoteToken);
     }
 
