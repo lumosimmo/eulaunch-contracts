@@ -124,7 +124,9 @@ contract LiquidityManager is Ownable {
         ProtocolFeeParams memory protocolFeeParams,
         bytes32 salt
     ) external onlyEulaunch onlyInitializeOnce returns (uint256 baseShares, address eulerSwap) {
-        baseShares = _handleBase(baseToken, baseVault, initialReserveBase);
+        SafeTransferLib.safeApprove(baseToken, baseVault, initialReserveBase);
+        // aderyn-ignore-next-line(reentrancy-state-change)
+        baseShares = IEVault(baseVault).deposit(initialReserveBase, address(this));
 
         bool switcheroo = baseToken > quoteToken;
 
@@ -168,11 +170,6 @@ contract LiquidityManager is Ownable {
         IEVC(evc).batch(items);
         eulerSwap_ = eulerSwap;
         emit EulerSwapDeployed(eulerSwap);
-    }
-
-    function _handleBase(address token, address vault, uint256 amount) internal returns (uint256 shares) {
-        SafeTransferLib.safeApprove(token, vault, amount);
-        shares = IEVault(vault).deposit(amount, address(this));
     }
 
     /// @notice Closes the liquidity manager by uninstalling the EulerSwap instance and withdrawing all the base/quote tokens to the given address.
