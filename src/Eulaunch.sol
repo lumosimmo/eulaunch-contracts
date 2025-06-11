@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity 0.8.27;
 
-import {LibTransient} from "solady/utils/LibTransient.sol";
 import {TokenSuiteFactory, ERC20Params} from "./TokenSuiteFactory.sol";
 import {QuoteVaultRegistry} from "./QuoteVaultRegistry.sol";
 import {LiquidityManager, CurveParams, ProtocolFeeParams, VaultParams} from "./LiquidityManager.sol";
@@ -10,8 +9,6 @@ import {SafeTransferLib} from "solady/utils/SafeTransferLib.sol";
 /// @title Eulaunch Factory
 /// @notice A token factory and liquidity bootstrapping platform for EulerSwap.
 contract Eulaunch {
-    using LibTransient for LibTransient.TAddress;
-
     address public immutable evc;
     address public immutable eulerSwapFactory;
     address public immutable tokenSuiteFactory;
