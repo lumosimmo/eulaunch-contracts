@@ -62,6 +62,13 @@ contract TokenSuiteFactory {
         emit ERC20Deployed(token, to);
     }
 
+    /// @notice Preview the address of the ERC20 token that would be deployed with the given salt.
+    /// @param salt The salt for the CREATE3 deployment via CREATEX.
+    /// @return token The address of the token that would be deployed.
+    function previewERC20(bytes32 salt) external view returns (address token) {
+        token = CREATEX.computeCreate3Address(salt);
+    }
+
     /// @notice Deploy an escrow vault for a given underlying asset.
     /// @dev The escrow vault is a simple vault that holds the underlying asset and does not allow borrowing.
     /// @param underlyingAsset The address of the underlying asset.

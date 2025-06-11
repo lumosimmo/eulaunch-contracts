@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity 0.8.27;
 
+import {EnumerableSetLib} from "solady/utils/EnumerableSetLib.sol";
 import {SafeTransferLib} from "solady/utils/SafeTransferLib.sol";
 import {TokenSuiteFactory, ERC20Params} from "./TokenSuiteFactory.sol";
 import {QuoteVaultRegistry} from "./QuoteVaultRegistry.sol";
@@ -9,15 +10,23 @@ import {LiquidityManager, CurveParams, ProtocolFeeParams, VaultParams, Resources
 /// @title Eulaunch Factory
 /// @notice A token factory and liquidity bootstrapping platform for EulerSwap.
 contract Eulaunch {
+    using EnumerableSetLib for EnumerableSetLib.AddressSet;
+
     address public immutable evc;
     address public immutable eulerSwapFactory;
     address public immutable tokenSuiteFactory;
     address public immutable quoteVaultRegistry;
 
     Resources[] internal allResources_;
+    address[] internal allPools_;
+    address[] internal allBaseTokens_;
+    mapping(address quoteToken => address[] baseTokens) internal quoteTokenToBaseTokensMap_;
+    mapping(address baseToken => address quoteToken) internal baseTokenToQuoteTokenMap_;
+
     // These maps are 1-indexed
     mapping(address pool => uint256 index) internal poolIndexMap_;
     mapping(address baseToken => uint256 index) internal baseTokenIndexMap_;
+    mapping(address liquidityManager => uint256 index) internal liquidityManagerIndexMap_;
 
     error QuoteVaultNotFound();
     error ResourcesNotFound();
@@ -77,8 +86,14 @@ contract Eulaunch {
 
     function _addResources(Resources memory resources) internal {
         allResources_.push(resources);
+        allPools_.push(resources.eulerSwap);
+        allBaseTokens_.push(resources.baseToken);
+        quoteTokenToBaseTokensMap_[resources.quoteToken].push(resources.baseToken);
+        baseTokenToQuoteTokenMap_[resources.baseToken] = resources.quoteToken;
+
         poolIndexMap_[resources.eulerSwap] = allResources_.length;
         baseTokenIndexMap_[resources.baseToken] = allResources_.length;
+        liquidityManagerIndexMap_[resources.liquidityManager] = allResources_.length;
     }
 
     /// @notice Gets the resources by the EulerSwap instance.
@@ -99,11 +114,145 @@ contract Eulaunch {
         return allResources_[index - 1];
     }
 
+    /// @notice Gets the pool by the base token.
+    /// @param baseToken The address of the base token.
+    /// @return pool The pool linked to the base token.
+    function getPoolByBaseToken(address baseToken) external view returns (address pool) {
+        uint256 index = baseTokenIndexMap_[baseToken];
+        require(index != 0, ResourcesNotFound());
+        return allPools_[index - 1];
+    }
+
+    /// @notice Gets the resources by the liquidity manager.
+    /// @param liquidityManager The address of the liquidity manager.
+    /// @return resources The resources linked to the liquidity manager.
+    function getResourcesByLiquidityManager(address liquidityManager) external view returns (Resources memory) {
+        uint256 index = liquidityManagerIndexMap_[liquidityManager];
+        require(index != 0, ResourcesNotFound());
+        return allResources_[index - 1];
+    }
+
     /// @notice Gets the resources by the index.
     /// @param index The index of the resources.
     /// @return resources The resources linked to the index.
-    function getResources(uint256 index) external view returns (Resources memory) {
+    function getResourcesByIndex(uint256 index) external view returns (Resources memory) {
         require(index != 0, ResourcesNotFound());
         return allResources_[index - 1];
+    }
+
+    /// @notice Gets the base token by the index.
+    /// @param index The index of the base token.
+    /// @return baseToken The base token linked to the index.
+    function getBaseTokenByIndex(uint256 index) external view returns (address baseToken) {
+        require(index != 0, ResourcesNotFound());
+        return allBaseTokens_[index - 1];
+    }
+
+    /// @notice Gets the quote token by the base token.
+    /// @param baseToken The address of the base token.
+    /// @return quoteToken The quote token linked to the base token.
+    function getQuoteTokenByBaseToken(address baseToken) external view returns (address quoteToken) {
+        quoteToken = baseTokenToQuoteTokenMap_[baseToken];
+        require(quoteToken != address(0), ResourcesNotFound());
+    }
+
+    /// @notice Gets all the resources with pagination.
+    /// @param limit The number of resources to return.
+    /// @param offset The offset for pagination.
+    /// @return resources An array of resources.
+    /// @return total The total number of resources.
+    function getAllResources(uint256 limit, uint256 offset)
+        external
+        view
+        returns (Resources[] memory resources, uint256 total)
+    {
+        uint256 length = allResources_.length;
+        total = length;
+
+        if (offset >= length) {
+            return (new Resources[](0), total);
+        }
+
+        uint256 remaining = length - offset;
+        if (limit > remaining) {
+            limit = remaining;
+        }
+
+        resources = new Resources[](limit);
+        for (uint256 i = 0; i < limit; i++) {
+            resources[i] = allResources_[offset + i];
+        }
+    }
+
+    /// @notice Gets all the base tokens by the quote token with pagination.
+    /// @param quoteToken The address of the quote token.
+    /// @param limit The number of base tokens to return.
+    /// @param offset The offset for pagination.
+    /// @return baseTokens An array of base tokens.
+    /// @return total The total number of base tokens.
+    function getAllBaseTokensByQuoteToken(address quoteToken, uint256 limit, uint256 offset)
+        external
+        view
+        returns (address[] memory baseTokens, uint256 total)
+    {
+        address[] storage baseTokens_ = quoteTokenToBaseTokensMap_[quoteToken];
+        uint256 length = baseTokens_.length;
+        total = length;
+
+        if (offset >= length) {
+            return (new address[](0), total);
+        }
+
+        uint256 remaining = length - offset;
+        if (limit > remaining) {
+            limit = remaining;
+        }
+
+        baseTokens = new address[](limit);
+        for (uint256 i = 0; i < limit; i++) {
+            baseTokens[i] = baseTokens_[offset + i];
+        }
+
+        return (baseTokens, total);
+    }
+
+    /// @notice Gets all the resources by the quote token with pagination.
+    /// @param quoteToken The address of the quote token.
+    /// @param limit The number of resources to return.
+    /// @param offset The offset for pagination.
+    /// @return resources An array of resources.
+    /// @return total The total number of resources.
+    function getAllResourcesByQuoteToken(address quoteToken, uint256 limit, uint256 offset)
+        external
+        view
+        returns (Resources[] memory resources, uint256 total)
+    {
+        address[] storage baseTokens_ = quoteTokenToBaseTokensMap_[quoteToken];
+        uint256 length = baseTokens_.length;
+        total = length;
+
+        if (offset >= length) {
+            return (new Resources[](0), total);
+        }
+
+        uint256 remaining = length - offset;
+        if (limit > remaining) {
+            limit = remaining;
+        }
+
+        resources = new Resources[](limit);
+        for (uint256 i = 0; i < limit; i++) {
+            address baseToken = baseTokens_[offset + i];
+            uint256 index = baseTokenIndexMap_[baseToken];
+            resources[i] = allResources_[index - 1];
+        }
+
+        return (resources, total);
+    }
+
+    /// @notice Gets the total number of resources or pools launched via this contract.
+    /// @return total The total number of resources.
+    function getTotalResources() external view returns (uint256 total) {
+        total = allResources_.length;
     }
 }

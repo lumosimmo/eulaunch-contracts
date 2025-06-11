@@ -39,6 +39,7 @@ struct ProtocolFeeParams {
 /// @notice Resources linked to the EulerSwap instance.
 struct Resources {
     address eulerSwap;
+    address liquidityManager;
     address baseToken;
     address baseVault;
     address quoteToken;
@@ -179,6 +180,7 @@ contract LiquidityManager is Ownable {
         eulerSwap_ = eulerSwap;
         resources = Resources({
             eulerSwap: eulerSwap,
+            liquidityManager: address(this),
             baseToken: baseToken,
             baseVault: baseVault,
             quoteToken: quoteToken,
