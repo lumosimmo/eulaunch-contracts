@@ -67,7 +67,8 @@ contract TokenSuiteFactory {
     /// @param salt The salt for the CREATE3 deployment via CREATEX.
     /// @return token The address of the token that would be deployed.
     function previewERC20(bytes32 salt) external view returns (address token) {
-        token = CREATEX.computeCreate3Address(salt);
+        bytes32 guardedSalt = _efficientHash({a: bytes32(block.chainid), b: salt});
+        token = CREATEX.computeCreate3Address(guardedSalt);
     }
 
     /// @notice Deploy an escrow vault for a given underlying asset.
@@ -90,5 +91,13 @@ contract TokenSuiteFactory {
     function previewEscrowVault() external view returns (address vault) {
         uint256 nonce = GenericFactory(eVaultFactory).getProxyListLength();
         vault = LibRLP.computeAddress(eVaultFactory, nonce + 1);
+    }
+
+    function _efficientHash(bytes32 a, bytes32 b) internal pure returns (bytes32 hash) {
+        assembly ("memory-safe") {
+            mstore(0x00, a)
+            mstore(0x20, b)
+            hash := keccak256(0x00, 0x40)
+        }
     }
 }
