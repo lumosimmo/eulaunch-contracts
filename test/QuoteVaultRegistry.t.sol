@@ -11,19 +11,9 @@ import {EulerSwapFactory} from "euler-swap/src/EulerSwapFactory.sol";
 
 contract QuoteVaultRegistryTest is EulaunchTestBase {
     QuoteVaultRegistry internal registry;
-    address internal deployer;
-    address internal user1;
-    address internal user2;
 
     function setUp() public override {
         super.setUp();
-
-        deployer = address(this);
-        vm.label(deployer, "Deployer");
-        user1 = vm.addr(2);
-        vm.label(user1, "User1");
-        user2 = vm.addr(3);
-        vm.label(user2, "User2");
 
         vm.startPrank(deployer);
         registry = new QuoteVaultRegistry(address(eulerSwapFactory));

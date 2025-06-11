@@ -15,9 +15,6 @@ contract TokenSuiteFactoryTest is EulaunchTestBase {
     uint256 internal constant INITIAL_SUPPLY = 1_000_000_000 ether;
 
     TokenSuiteFactory internal tokenSuiteFactory;
-    address internal deployer;
-    address internal user1;
-    address internal user2;
 
     // We use predefined salt and address for testing purposes
     bytes32 internal salt1 = 0x00000000000000000000000000000000000000000184568cce2890f4036e59b6;
@@ -27,13 +24,6 @@ contract TokenSuiteFactoryTest is EulaunchTestBase {
 
     function setUp() public override {
         super.setUp();
-
-        deployer = address(this);
-        vm.label(deployer, "Deployer");
-        user1 = vm.addr(2);
-        vm.label(user1, "User1");
-        user2 = vm.addr(3);
-        vm.label(user2, "User2");
 
         vm.startPrank(deployer);
         tokenSuiteFactory = new TokenSuiteFactory(address(factory), address(perspective));
