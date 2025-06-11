@@ -36,6 +36,15 @@ struct ProtocolFeeParams {
     address protocolFeeRecipient;
 }
 
+/// @notice Resources linked to the EulerSwap instance.
+struct Resources {
+    address eulerSwap;
+    address baseToken;
+    address baseVault;
+    address quoteToken;
+    address quoteVault;
+}
+
 /// @title Liquidity Manager
 /// @notice A liquidity manager for EulerSwap. It owns the EulerSwap instance, and is fully owned by an owner.
 // aderyn-ignore-next-line(centralization-risk, contract-locks-ether)
@@ -115,19 +124,17 @@ contract LiquidityManager is Ownable {
     /// @param fee The swap fee.
     /// @param protocolFeeParams The parameters for the protocol fee.
     /// @param salt The salt for the EulerSwap instance. Not to be confused with the salt in `TokenSuiteFactory.deployERC20()`.
-    /// @return baseShares The number of shares of the base token in the base vault. This should equal to `initialReserveBase`.
-    /// @return eulerSwap The address of the EulerSwap instance deployed.
-
+    /// @return resources The resources linked to the EulerSwap instance.
     function initialize(
         CurveParams memory curveParams,
         uint112 initialReserveBase,
         uint256 fee,
         ProtocolFeeParams memory protocolFeeParams,
         bytes32 salt
-    ) external onlyEulaunch onlyInitializeOnce returns (uint256 baseShares, address eulerSwap) {
+    ) external onlyEulaunch onlyInitializeOnce returns (Resources memory resources) {
         SafeTransferLib.safeApprove(baseToken, baseVault, initialReserveBase);
-        // aderyn-ignore-next-line(reentrancy-state-change)
-        baseShares = IEVault(baseVault).deposit(initialReserveBase, address(this));
+        // aderyn-ignore-next-line(reentrancy-state-change, unchecked-return)
+        IEVault(baseVault).deposit(initialReserveBase, address(this));
 
         bool switcheroo = baseToken > quoteToken;
 
@@ -146,7 +153,7 @@ contract LiquidityManager is Ownable {
             protocolFeeRecipient: protocolFeeParams.protocolFeeRecipient
         });
         // aderyn-ignore-next-line(reentrancy-state-change)
-        eulerSwap = EulerSwapFactory(eulerSwapFactory).computePoolAddress(poolParams, salt);
+        address eulerSwap = EulerSwapFactory(eulerSwapFactory).computePoolAddress(poolParams, salt);
 
         IEulerSwap.InitialState memory initialState = IEulerSwap.InitialState({
             currReserve0: switcheroo ? 0 : initialReserveBase,
@@ -170,6 +177,13 @@ contract LiquidityManager is Ownable {
         // aderyn-ignore-next-line(reentrancy-state-change)
         IEVC(evc).batch(items);
         eulerSwap_ = eulerSwap;
+        resources = Resources({
+            eulerSwap: eulerSwap,
+            baseToken: baseToken,
+            baseVault: baseVault,
+            quoteToken: quoteToken,
+            quoteVault: quoteVault
+        });
         emit EulerSwapDeployed(eulerSwap);
     }
 
