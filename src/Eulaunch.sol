@@ -3,6 +3,7 @@ pragma solidity 0.8.27;
 
 import {EnumerableSetLib} from "solady/utils/EnumerableSetLib.sol";
 import {SafeTransferLib} from "solady/utils/SafeTransferLib.sol";
+import {LibRLP} from "solady/utils/LibRLP.sol";
 import {TokenSuiteFactory, ERC20Params} from "./TokenSuiteFactory.sol";
 import {QuoteVaultRegistry} from "./QuoteVaultRegistry.sol";
 import {LiquidityManager, CurveParams, ProtocolFeeParams, VaultParams, Resources} from "./LiquidityManager.sol";
@@ -56,7 +57,7 @@ contract Eulaunch {
         uint256 fee,
         ProtocolFeeParams memory protocolFeeParams,
         bytes32 hookSalt
-    ) external {
+    ) external returns (Resources memory resources) {
         address quoteVault = QuoteVaultRegistry(quoteVaultRegistry).getQuoteVault(quoteToken);
         require(quoteVault != address(0), QuoteVaultNotFound());
 
@@ -72,8 +73,7 @@ contract Eulaunch {
 
         SafeTransferLib.safeApprove(baseToken, address(liquidityManager), tokenParams.totalSupply);
 
-        // aderyn-ignore-next-line(unchecked-return)
-        Resources memory resources =
+        resources =
             liquidityManager.initialize(curveParams, uint112(tokenParams.totalSupply), fee, protocolFeeParams, hookSalt);
         _addResources(resources);
         emit Launched(resources.baseToken, resources.quoteToken, resources.eulerSwap, allResources_.length);
@@ -94,6 +94,11 @@ contract Eulaunch {
         poolIndexMap_[resources.eulerSwap] = allResources_.length;
         baseTokenIndexMap_[resources.baseToken] = allResources_.length;
         liquidityManagerIndexMap_[resources.liquidityManager] = allResources_.length;
+    }
+
+    function previewLiquidityManager() external view returns (address lm) {
+        uint256 nonce = allPools_.length;
+        lm = LibRLP.computeAddress(address(this), nonce + 1);
     }
 
     /// @notice Gets the resources by the EulerSwap instance.
