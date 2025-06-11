@@ -133,6 +133,7 @@ contract LiquidityManager is Ownable {
         ProtocolFeeParams memory protocolFeeParams,
         bytes32 salt
     ) external onlyEulaunch onlyInitializeOnce returns (Resources memory resources) {
+        SafeTransferLib.safeTransferFrom(baseToken, msg.sender, address(this), initialReserveBase);
         SafeTransferLib.safeApprove(baseToken, baseVault, initialReserveBase);
         // aderyn-ignore-next-line(reentrancy-state-change, unchecked-return)
         IEVault(baseVault).deposit(initialReserveBase, address(this));
