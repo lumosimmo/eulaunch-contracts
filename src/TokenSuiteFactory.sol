@@ -3,6 +3,7 @@ pragma solidity 0.8.27;
 
 import {GenericFactory} from "evk/GenericFactory/GenericFactory.sol";
 import {IEVault} from "evk/EVault/IEVault.sol";
+import {LibRLP} from "solady/utils/LibRLP.sol";
 import {IPerspective} from "./vendor/IPerspective.sol";
 import {BasicAsset} from "./tokens/BasicAsset.sol";
 import {ICreateX} from "./vendor/ICreateX.sol";
@@ -82,5 +83,12 @@ contract TokenSuiteFactory {
         IPerspective(perspective).perspectiveVerify(vault, true);
 
         emit EscrowVaultDeployed(vault, underlyingAsset);
+    }
+
+    /// @notice Preview the address of the *NEXT* escrow vault that would be deployed.
+    /// @return vault The address of the vault that would be deployed.
+    function previewEscrowVault() external view returns (address vault) {
+        uint256 nonce = GenericFactory(eVaultFactory).getProxyListLength();
+        vault = LibRLP.computeAddress(eVaultFactory, nonce + 1);
     }
 }
