@@ -16,12 +16,12 @@ contract QuoteVaultRegistryTest is EulaunchTestBase {
         super.setUp();
 
         vm.startPrank(deployer);
-        registry = new QuoteVaultRegistry(address(eulerSwapFactory));
+        registry = new QuoteVaultRegistry(address(factory));
         vm.stopPrank();
     }
 
     function test_Constructor() public view {
-        assertEq(registry.eulerSwapFactory(), address(eulerSwapFactory));
+        assertEq(registry.evkFactory(), address(factory));
         assertEq(registry.owner(), deployer);
     }
 

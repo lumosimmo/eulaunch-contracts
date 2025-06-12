@@ -13,7 +13,7 @@ import {EVault} from "euler-vault-kit/src/EVault/EVault.sol";
 ///      vault is checked upon setting. Each token can only have one vault associated with it.
 // aderyn-ignore-next-line(centralization-risk, contract-locks-ether)
 contract QuoteVaultRegistry is Ownable {
-    address public immutable eulerSwapFactory;
+    address public immutable evkFactory;
     mapping(address token => address vault) public quoteVaults;
 
     error VaultDoesNotMatchToken();
@@ -21,8 +21,8 @@ contract QuoteVaultRegistry is Ownable {
     event QuoteVaultSet(address indexed token, address indexed vault);
     event QuoteVaultRemoved(address indexed token);
 
-    constructor(address _eulerSwapFactory) {
-        eulerSwapFactory = _eulerSwapFactory;
+    constructor(address _evkFactory) {
+        evkFactory = _evkFactory;
         _initializeOwner(msg.sender);
     }
 
@@ -30,7 +30,6 @@ contract QuoteVaultRegistry is Ownable {
     /// @param token The address of the token for which the vault is being checked.
     /// @param vault The address of the EVault to check.
     function _checkVault(address token, address vault) internal view {
-        address evkFactory = EulerSwapFactory(eulerSwapFactory).evkFactory();
         require(GenericFactory(evkFactory).isProxy(vault), EulerSwapFactory.InvalidVaultImplementation());
         address asset = EVault(vault).asset();
         require(asset == token, VaultDoesNotMatchToken());

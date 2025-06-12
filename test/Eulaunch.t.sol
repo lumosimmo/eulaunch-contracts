@@ -28,7 +28,7 @@ contract EulaunchTest is EulaunchTestBase {
 
         vm.startPrank(deployer);
         tokenSuiteFactory = new TokenSuiteFactory(address(factory), address(perspective));
-        quoteVaultRegistry = new QuoteVaultRegistry(address(eulerSwapFactory));
+        quoteVaultRegistry = new QuoteVaultRegistry(address(factory));
         eulaunch = new Eulaunch(
             address(evc), address(eulerSwapFactory), address(tokenSuiteFactory), address(quoteVaultRegistry)
         );
