@@ -16,11 +16,7 @@ contract EulaunchLens {
     error PoolNotFound();
     error InvalidTokens();
 
-    constructor(
-        address _eulaunch,
-        address _tokenSuiteFactory,
-        address _eulerSwapPeriphery
-    ) {
+    constructor(address _eulaunch, address _tokenSuiteFactory, address _eulerSwapPeriphery) {
         eulaunch = _eulaunch;
         tokenSuiteFactory = _tokenSuiteFactory;
         eulerSwapPeriphery = _eulerSwapPeriphery;
