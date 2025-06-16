@@ -13,7 +13,6 @@ import {EulaunchTestBase} from "./EulaunchTestBase.t.sol";
 import {Eulaunch} from "../src/Eulaunch.sol";
 import {LiquidityManager} from "../src/LiquidityManager.sol";
 import {TokenSuiteFactory} from "../src/TokenSuiteFactory.sol";
-import {QuoteVaultRegistry} from "../src/QuoteVaultRegistry.sol";
 import {BasicAsset} from "../src/tokens/BasicAsset.sol";
 import {Resources, CurveParams, VaultParams, ProtocolFeeParams} from "../src/LiquidityManager.sol";
 import {ERC20Params} from "../src/TokenSuiteFactory.sol";
@@ -21,20 +20,13 @@ import {ERC20Params} from "../src/TokenSuiteFactory.sol";
 contract EulaunchTest is EulaunchTestBase {
     Eulaunch internal eulaunch;
     TokenSuiteFactory internal tokenSuiteFactory;
-    QuoteVaultRegistry internal quoteVaultRegistry;
 
     function setUp() public override {
         super.setUp();
 
         vm.startPrank(deployer);
         tokenSuiteFactory = new TokenSuiteFactory(address(factory), address(perspective));
-        quoteVaultRegistry = new QuoteVaultRegistry(address(factory));
-        eulaunch = new Eulaunch(
-            address(evc), address(eulerSwapFactory), address(tokenSuiteFactory), address(quoteVaultRegistry)
-        );
-
-        // We will be using TST3 as the quote token
-        quoteVaultRegistry.setQuoteVault(address(assetTST3), address(eTST3));
+        eulaunch = new Eulaunch(address(evc), address(eulerSwapFactory), address(tokenSuiteFactory));
         vm.stopPrank();
     }
 
@@ -78,9 +70,8 @@ contract EulaunchTest is EulaunchTestBase {
         (address _eulerSwap, bytes32 hookSalt) = mineSalt(poolParams);
 
         vm.startPrank(user1);
-        resources = eulaunch.launch(
-            tokenParams, salt1, address(assetTST3), curveParams, fee, protocolFeeParams, lmSalt1, hookSalt
-        );
+        resources =
+            eulaunch.launch(tokenParams, salt1, address(eTST3), curveParams, fee, protocolFeeParams, lmSalt1, hookSalt);
         vm.stopPrank();
 
         assertTrue(resources.baseToken == token1, "Base token mismatch");

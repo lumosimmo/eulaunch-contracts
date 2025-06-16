@@ -3,7 +3,6 @@ pragma solidity 0.8.27;
 
 import "forge-std/Script.sol";
 import {Eulaunch} from "src/Eulaunch.sol";
-import {QuoteVaultRegistry} from "src/QuoteVaultRegistry.sol";
 import {TokenSuiteFactory} from "src/TokenSuiteFactory.sol";
 
 contract DeployEulaunch is Script {
@@ -21,16 +20,12 @@ contract DeployEulaunch is Script {
 
         vm.startBroadcast(deployerAddress);
 
-        // Deploy QuoteVaultRegistry
-        QuoteVaultRegistry quoteVaultRegistry = new QuoteVaultRegistry(evkFactory);
-        console.log("QuoteVaultRegistry deployed at", address(quoteVaultRegistry));
-
         // Deploy TokenSuiteFactory
         TokenSuiteFactory tokenSuiteFactory = new TokenSuiteFactory(evkFactory, escrowedCollateralPerspective);
         console.log("TokenSuiteFactory deployed at", address(tokenSuiteFactory));
 
         // Deploy Eulaunch Factory
-        Eulaunch eulaunch = new Eulaunch(evc, eulerSwapFactory, address(tokenSuiteFactory), address(quoteVaultRegistry));
+        Eulaunch eulaunch = new Eulaunch(evc, eulerSwapFactory, address(tokenSuiteFactory));
         console.log("Eulaunch deployed at", address(eulaunch));
 
         vm.stopBroadcast();
