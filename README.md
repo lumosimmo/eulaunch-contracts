@@ -18,3 +18,4 @@ While the pool is live, the quote token side will continuously accrue interest, 
 | ------------------------------------------------------------------------------------------- | -------------------------------------------- |
 | [Eulaunch](https://uniscan.xyz/address/0x55BC055328Fe23C571976Ddb8a0EEe3FF66E8D4f)          | `0x55BC055328Fe23C571976Ddb8a0EEe3FF66E8D4f` |
 | [TokenSuiteFactory](https://uniscan.xyz/address/0x66D7bB5614E3C46Ec325259bfa93Da405e476387) | `0x66D7bB5614E3C46Ec325259bfa93Da405e476387` |
+| [EulaunchLens](https://uniscan.xyz/address/0x5B2f2b8442a1B4073B0f96239efAA673F2b7421f)      | `0x5B2f2b8442a1B4073B0f96239efAA673F2b7421f` |
