@@ -11,7 +11,6 @@ import {IEulerSwap} from "euler-swap/src/interfaces/IEulerSwap.sol";
 contract EulaunchLens {
     address public immutable eulaunch;
     address public immutable tokenSuiteFactory;
-    address public immutable quoteVaultRegistry;
     address public immutable eulerSwapPeriphery;
 
     error PoolNotFound();
@@ -20,12 +19,10 @@ contract EulaunchLens {
     constructor(
         address _eulaunch,
         address _tokenSuiteFactory,
-        address _quoteVaultRegistry,
         address _eulerSwapPeriphery
     ) {
         eulaunch = _eulaunch;
         tokenSuiteFactory = _tokenSuiteFactory;
-        quoteVaultRegistry = _quoteVaultRegistry;
         eulerSwapPeriphery = _eulerSwapPeriphery;
     }
 

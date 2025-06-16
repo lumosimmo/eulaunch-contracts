@@ -2,8 +2,8 @@
 pragma solidity 0.8.27;
 
 import {SafeTransferLib} from "solady/utils/SafeTransferLib.sol";
+import {IEVault} from "evk/EVault/IEVault.sol";
 import {TokenSuiteFactory, ERC20Params} from "./TokenSuiteFactory.sol";
-import {QuoteVaultRegistry} from "./QuoteVaultRegistry.sol";
 import {LiquidityManager, CurveParams, ProtocolFeeParams, VaultParams, Resources} from "./LiquidityManager.sol";
 import {ICreateX} from "./vendor/ICreateX.sol";
 
@@ -14,7 +14,6 @@ contract Eulaunch {
     address public immutable evc;
     address public immutable eulerSwapFactory;
     address public immutable tokenSuiteFactory;
-    address public immutable quoteVaultRegistry;
 
     Resources[] internal allResources_;
     address[] internal allPools_;
@@ -27,22 +26,21 @@ contract Eulaunch {
     mapping(address baseToken => uint256 index) internal baseTokenIndexMap_;
     mapping(address liquidityManager => uint256 index) internal liquidityManagerIndexMap_;
 
-    error QuoteVaultNotFound();
+    error InvalidQuoteVault();
     error ResourcesNotFound();
 
     event Launched(address indexed baseToken, address indexed quoteToken, address indexed eulerSwap, uint256 index);
 
-    constructor(address _evc, address _eulerSwapFactory, address _tokenSuiteFactory, address _quoteVaultRegistry) {
+    constructor(address _evc, address _eulerSwapFactory, address _tokenSuiteFactory) {
         evc = _evc;
         eulerSwapFactory = _eulerSwapFactory;
         tokenSuiteFactory = _tokenSuiteFactory;
-        quoteVaultRegistry = _quoteVaultRegistry;
     }
 
     /// @notice Creates a new token, an EulerSwap instance, and a LiquidityManager owning the instance.
     /// @param tokenParams The details for the base token to deploy with.
     /// @param tokenSalt The salt to deploy the base token via CreateX.
-    /// @param quoteToken The address of the quote token.
+    /// @param quoteVault The address of the quote vault.
     /// @param curveParams The AMM curve parameters.
     /// @param fee The swap fee.
     /// @param protocolFeeParams The EulerSwap protocol fee parameters.
@@ -51,15 +49,15 @@ contract Eulaunch {
     function launch(
         ERC20Params memory tokenParams,
         bytes32 tokenSalt,
-        address quoteToken,
+        address quoteVault,
         CurveParams memory curveParams,
         uint256 fee,
         ProtocolFeeParams memory protocolFeeParams,
         bytes32 lmSalt,
         bytes32 hookSalt
     ) external returns (Resources memory resources) {
-        address quoteVault = QuoteVaultRegistry(quoteVaultRegistry).getQuoteVault(quoteToken);
-        require(quoteVault != address(0), QuoteVaultNotFound());
+        address quoteToken = IEVault(quoteVault).asset();
+        require(quoteToken != address(0), InvalidQuoteVault());
 
         VaultParams memory vaultParams;
         {
