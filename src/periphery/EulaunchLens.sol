@@ -1,24 +1,25 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity 0.8.27;
 
-import {Eulaunch} from "../Eulaunch.sol";
-import {LiquidityManager, Resources} from "../LiquidityManager.sol";
 import {IEulerSwapPeriphery} from "euler-swap/src/interfaces/IEulerSwapPeriphery.sol";
 import {IEulerSwap} from "euler-swap/src/interfaces/IEulerSwap.sol";
+import {Eulaunch} from "../Eulaunch.sol";
+import {LiquidityManager, Resources} from "../LiquidityManager.sol";
+import {TokenSuiteFactory} from "../TokenSuiteFactory.sol";
+import {ICreateX} from "../vendor/ICreateX.sol";
 
 /// @title EulaunchLens
 /// @notice A data entry aggregator for Eulaunch.
 contract EulaunchLens {
+    ICreateX public constant CREATEX = ICreateX(0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed);
     address public immutable eulaunch;
-    address public immutable tokenSuiteFactory;
     address public immutable eulerSwapPeriphery;
 
     error PoolNotFound();
     error InvalidTokens();
 
-    constructor(address _eulaunch, address _tokenSuiteFactory, address _eulerSwapPeriphery) {
+    constructor(address _eulaunch, address _eulerSwapPeriphery) {
         eulaunch = _eulaunch;
-        tokenSuiteFactory = _tokenSuiteFactory;
         eulerSwapPeriphery = _eulerSwapPeriphery;
     }
 
@@ -126,6 +127,27 @@ contract EulaunchLens {
             return (reserve1, reserve0);
         } else {
             return (reserve0, reserve1);
+        }
+    }
+
+    function previewEscrowVault() external view returns (address vault) {
+        vault = TokenSuiteFactory(Eulaunch(eulaunch).tokenSuiteFactory()).previewEscrowVault();
+    }
+
+    /// @notice Preview the address of contract that would be deployed with the given salt.
+    ///         Crosschain deployment protection is applied.
+    /// @param salt The salt for the CREATE3 deployment via CREATEX.
+    /// @return deployment The address of the contract that would be deployed.
+    function previewCreate3(bytes32 salt) external view returns (address deployment) {
+        bytes32 guardedSalt = _efficientHash({a: bytes32(block.chainid), b: salt});
+        deployment = CREATEX.computeCreate3Address(guardedSalt);
+    }
+
+    function _efficientHash(bytes32 a, bytes32 b) internal pure returns (bytes32 hash) {
+        assembly ("memory-safe") {
+            mstore(0x00, a)
+            mstore(0x20, b)
+            hash := keccak256(0x00, 0x40)
         }
     }
 }
