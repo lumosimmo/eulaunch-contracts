@@ -79,14 +79,21 @@ contract LiquidityManager is Ownable {
     /// @notice Constructor for the liquidity manager.
     /// @param _evc The address of the Ethereum Vault Connector.
     /// @param _eulerSwapFactory The address of the EulerSwap factory.
+    /// @param _eulaunch The address of the Eulaunch factory.
     /// @param _vaultParams The parameters for the vaults. The base/quote tokens here are not sorted.
     /// @param _owner The privileged owner of this liquidity pool.
-    constructor(address _evc, address _eulerSwapFactory, VaultParams memory _vaultParams, address _owner) {
+    constructor(
+        address _evc,
+        address _eulerSwapFactory,
+        address _eulaunch,
+        VaultParams memory _vaultParams,
+        address _owner
+    ) {
         // aderyn-ignore-next-line(reentrancy-state-change)
-        require(Eulaunch(msg.sender).isEulaunch(), NotEulaunch());
-        eulaunch = msg.sender;
+        require(Eulaunch(_eulaunch).isEulaunch(), NotEulaunch());
         evc = _evc;
         eulerSwapFactory = _eulerSwapFactory;
+        eulaunch = _eulaunch;
         baseToken = _vaultParams.baseToken;
         quoteToken = _vaultParams.quoteToken;
         baseVault = _vaultParams.baseVault;

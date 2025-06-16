@@ -43,8 +43,8 @@ contract EulaunchTest is EulaunchTestBase {
         assertNotEq(_baseToken, address(0), "Base token should be definable");
         address _baseVault = tokenSuiteFactory.previewEscrowVault();
         assertNotEq(_baseVault, address(0), "Base vault should be definable");
-        address _lm = eulaunch.previewLiquidityManager();
-        assertNotEq(_lm, address(0), "LiquidityManager should be definable");
+        address _lm = eulaunch.previewLiquidityManager(lmSalt1);
+        assertEq(_lm, lm1, "LiquidityManager mismatch");
 
         ERC20Params memory tokenParams = ERC20Params({name: "TokenForSale", symbol: "TFS", totalSupply: totalSupply});
         CurveParams memory curveParams = CurveParams({
@@ -78,15 +78,16 @@ contract EulaunchTest is EulaunchTestBase {
         (address _eulerSwap, bytes32 hookSalt) = mineSalt(poolParams);
 
         vm.startPrank(user1);
-        resources =
-            eulaunch.launch(tokenParams, salt1, address(assetTST3), curveParams, fee, protocolFeeParams, hookSalt);
+        resources = eulaunch.launch(
+            tokenParams, salt1, address(assetTST3), curveParams, fee, protocolFeeParams, lmSalt1, hookSalt
+        );
         vm.stopPrank();
 
         assertTrue(resources.baseToken == token1, "Base token mismatch");
         assertTrue(resources.quoteToken == address(assetTST3), "Quote token mismatch");
         assertTrue(resources.baseVault != address(0), "Base vault mismatch");
         assertTrue(resources.quoteVault == address(eTST3), "Quote vault mismatch");
-        assertTrue(resources.liquidityManager != address(0), "Liquidity manager mismatch");
+        assertTrue(resources.liquidityManager == lm1, "Liquidity manager mismatch");
         assertTrue(resources.eulerSwap == _eulerSwap, "EulerSwap pool mismatch");
     }
 

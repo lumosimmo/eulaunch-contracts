@@ -20,6 +20,9 @@ contract EulaunchTestBase is FactoryTest {
     bytes32 internal immutable salt2 = 0x0000000000000000000000000000000000000000015ca316f75cb2f1030a8960;
     address internal immutable token2 = 0x27181d370eEACbAd5Abd3AE0432685f559111325;
 
+    bytes32 internal immutable lmSalt1 = 0x000000000000000000000000000000000000000001000000004c03bd8abbcc48;
+    address internal immutable lm1 = 0xEEeeb9772F8383829ebabd39B5cA1ED53735c817;
+
     function setUp() public virtual override {
         // Set the chain to Unichain to pin CreateX computations
         vm.chainId(130);

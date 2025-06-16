@@ -2,14 +2,15 @@
 pragma solidity 0.8.27;
 
 import {SafeTransferLib} from "solady/utils/SafeTransferLib.sol";
-import {LibRLP} from "solady/utils/LibRLP.sol";
 import {TokenSuiteFactory, ERC20Params} from "./TokenSuiteFactory.sol";
 import {QuoteVaultRegistry} from "./QuoteVaultRegistry.sol";
 import {LiquidityManager, CurveParams, ProtocolFeeParams, VaultParams, Resources} from "./LiquidityManager.sol";
+import {ICreateX} from "./vendor/ICreateX.sol";
 
 /// @title Eulaunch Factory
 /// @notice A token factory and liquidity bootstrapping platform for EulerSwap.
 contract Eulaunch {
+    ICreateX public constant CREATEX = ICreateX(0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed);
     address public immutable evc;
     address public immutable eulerSwapFactory;
     address public immutable tokenSuiteFactory;
@@ -45,6 +46,7 @@ contract Eulaunch {
     /// @param curveParams The AMM curve parameters.
     /// @param fee The swap fee.
     /// @param protocolFeeParams The EulerSwap protocol fee parameters.
+    /// @param lmSalt The salt to deploy the LiquidityManager via CreateX.
     /// @param hookSalt The salt to deploy the EulerSwap hook.
     function launch(
         ERC20Params memory tokenParams,
@@ -53,25 +55,39 @@ contract Eulaunch {
         CurveParams memory curveParams,
         uint256 fee,
         ProtocolFeeParams memory protocolFeeParams,
+        bytes32 lmSalt,
         bytes32 hookSalt
     ) external returns (Resources memory resources) {
         address quoteVault = QuoteVaultRegistry(quoteVaultRegistry).getQuoteVault(quoteToken);
         require(quoteVault != address(0), QuoteVaultNotFound());
 
-        address baseToken = TokenSuiteFactory(tokenSuiteFactory).deployERC20(tokenParams, address(this), tokenSalt);
-        address baseVault = TokenSuiteFactory(tokenSuiteFactory).deployEscrowVault(baseToken);
+        VaultParams memory vaultParams;
+        {
+            address baseToken = TokenSuiteFactory(tokenSuiteFactory).deployERC20(tokenParams, address(this), tokenSalt);
+            address baseVault = TokenSuiteFactory(tokenSuiteFactory).deployEscrowVault(baseToken);
 
-        LiquidityManager liquidityManager = new LiquidityManager(
-            evc,
-            eulerSwapFactory,
-            VaultParams({baseToken: baseToken, quoteToken: quoteToken, baseVault: baseVault, quoteVault: quoteVault}),
-            msg.sender
+            vaultParams = VaultParams({
+                baseToken: baseToken,
+                quoteToken: quoteToken,
+                baseVault: baseVault,
+                quoteVault: quoteVault
+            });
+        }
+
+        address liquidityManager;
+        {
+            bytes memory args = abi.encode(evc, eulerSwapFactory, address(this), vaultParams, msg.sender);
+            // aderyn-ignore-next-line(abi-encode-packed-hash-collision)
+            bytes memory initCode = abi.encodePacked(type(LiquidityManager).creationCode, args);
+
+            liquidityManager = CREATEX.deployCreate3(lmSalt, initCode);
+        }
+
+        SafeTransferLib.safeApprove(vaultParams.baseToken, liquidityManager, tokenParams.totalSupply);
+
+        resources = LiquidityManager(liquidityManager).initialize(
+            curveParams, uint112(tokenParams.totalSupply), fee, protocolFeeParams, hookSalt
         );
-
-        SafeTransferLib.safeApprove(baseToken, address(liquidityManager), tokenParams.totalSupply);
-
-        resources =
-            liquidityManager.initialize(curveParams, uint112(tokenParams.totalSupply), fee, protocolFeeParams, hookSalt);
         _addResources(resources);
         emit Launched(resources.baseToken, resources.quoteToken, resources.eulerSwap, allResources_.length);
     }
@@ -93,9 +109,9 @@ contract Eulaunch {
         liquidityManagerIndexMap_[resources.liquidityManager] = allResources_.length;
     }
 
-    function previewLiquidityManager() external view returns (address lm) {
-        uint256 nonce = allPools_.length;
-        lm = LibRLP.computeAddress(address(this), nonce + 1);
+    function previewLiquidityManager(bytes32 salt) external view returns (address lm) {
+        bytes32 guardedSalt = _efficientHash({a: bytes32(block.chainid), b: salt});
+        lm = CREATEX.computeCreate3Address(guardedSalt);
     }
 
     /// @notice Gets the resources by the EulerSwap instance.
@@ -256,5 +272,13 @@ contract Eulaunch {
     /// @return total The total number of resources.
     function getTotalResources() external view returns (uint256 total) {
         total = allResources_.length;
+    }
+
+    function _efficientHash(bytes32 a, bytes32 b) internal pure returns (bytes32 hash) {
+        assembly ("memory-safe") {
+            mstore(0x00, a)
+            mstore(0x20, b)
+            hash := keccak256(0x00, 0x40)
+        }
     }
 }
