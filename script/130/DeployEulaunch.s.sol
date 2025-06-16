@@ -15,6 +15,7 @@ contract DeployEulaunch is Script {
     address public constant eulerSwapImpl = 0xd91B0bfACA4691E6Aca7E0E83D9B7F8917989a03;
 
     function run() public {
+        vm.createSelectFork("unichain");
         uint256 deployerKey = vm.envUint("WALLET_PRIVATE_KEY");
         address deployerAddress = vm.rememberKey(deployerKey);
 
