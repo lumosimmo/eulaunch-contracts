@@ -51,18 +51,18 @@ contract EulaunchTest is EulaunchTestBase {
         ProtocolFeeParams memory protocolFeeParams =
             ProtocolFeeParams({protocolFee: 0, protocolFeeRecipient: address(0)});
 
-        bool switcheroo = _baseToken < address(assetTST3);
+        bool switcheroo = address(assetTST3) < _baseToken;
 
         IEulerSwap.Params memory poolParams = IEulerSwap.Params({
-            vault0: switcheroo ? _baseVault : address(eTST3),
-            vault1: switcheroo ? address(eTST3) : _baseVault,
+            vault0: switcheroo ? address(eTST3) : _baseVault,
+            vault1: switcheroo ? _baseVault : address(eTST3),
             eulerAccount: _lm,
-            equilibriumReserve0: switcheroo ? uint112(tokenParams.totalSupply) : 0,
-            equilibriumReserve1: switcheroo ? 0 : uint112(tokenParams.totalSupply),
+            equilibriumReserve0: switcheroo ? 0 : uint112(tokenParams.totalSupply),
+            equilibriumReserve1: switcheroo ? uint112(tokenParams.totalSupply) : 0,
             priceX: 1e18,
             priceY: 1e18,
-            concentrationX: switcheroo ? 0.85e18 : 0.4e18,
-            concentrationY: switcheroo ? 0.4e18 : 0.85e18,
+            concentrationX: switcheroo ? 0.4e18 : 0.85e18,
+            concentrationY: switcheroo ? 0.85e18 : 0.4e18,
             fee: fee,
             protocolFee: 0,
             protocolFeeRecipient: address(0)
