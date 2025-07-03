@@ -5,7 +5,7 @@ import {SafeTransferLib} from "solady/utils/SafeTransferLib.sol";
 import {IEVault} from "evk/EVault/IEVault.sol";
 import {TokenSuiteFactory, ERC20Params} from "./TokenSuiteFactory.sol";
 import {LiquidityManager, CurveParams, ProtocolFeeParams, VaultParams, Resources} from "./LiquidityManager.sol";
-import {ICreateX} from "./vendor/ICreateX.sol";
+import {ICreateX} from "../vendor/ICreateX.sol";
 
 /// @title Eulaunch Factory
 /// @notice A token factory and liquidity bootstrapping platform for EulerSwap.

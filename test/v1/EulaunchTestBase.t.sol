@@ -3,8 +3,8 @@ pragma solidity 0.8.27;
 
 import {Test} from "forge-std/Test.sol";
 import {FactoryTest} from "euler-swap/test/FactoryTest.t.sol";
-import {CreateX} from "./vendor/CreateX.sol";
-import {EscrowedCollateralPerspective} from "./vendor/evk-periphery/EscrowedCollateralPerspective.sol";
+import {CreateX} from "../vendor/CreateX.sol";
+import {EscrowedCollateralPerspective} from "../vendor/evk-periphery/EscrowedCollateralPerspective.sol";
 
 contract EulaunchTestBase is FactoryTest {
     EscrowedCollateralPerspective internal perspective;

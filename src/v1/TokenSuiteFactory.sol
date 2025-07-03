@@ -4,9 +4,9 @@ pragma solidity 0.8.27;
 import {GenericFactory} from "evk/GenericFactory/GenericFactory.sol";
 import {IEVault} from "evk/EVault/IEVault.sol";
 import {LibRLP} from "solady/utils/LibRLP.sol";
-import {IPerspective} from "./vendor/IPerspective.sol";
-import {BasicAsset} from "./tokens/BasicAsset.sol";
-import {ICreateX} from "./vendor/ICreateX.sol";
+import {IPerspective} from "../vendor/IPerspective.sol";
+import {BasicAsset} from "../tokens/BasicAsset.sol";
+import {ICreateX} from "../vendor/ICreateX.sol";
 
 /// @notice Parameters for deploying an ERC20 token with TokenSuiteFactory.
 struct ERC20Params {

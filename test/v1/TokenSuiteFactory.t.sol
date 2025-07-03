@@ -3,7 +3,7 @@ pragma solidity 0.8.27;
 
 import {Test, console} from "forge-std/Test.sol";
 import {EulaunchTestBase} from "./EulaunchTestBase.t.sol";
-import {TokenSuiteFactory, ERC20Params} from "src/TokenSuiteFactory.sol";
+import {TokenSuiteFactory, ERC20Params} from "src/v1/TokenSuiteFactory.sol";
 import {BasicAsset} from "src/tokens/BasicAsset.sol";
 import {IEVault} from "evk/EVault/IEVault.sol";
 import {Errors} from "evk/EVault/shared/Errors.sol";

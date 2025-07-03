@@ -7,7 +7,7 @@ import {IEulerSwap} from "euler-swap/src/interfaces/IEulerSwap.sol";
 import {Eulaunch} from "../Eulaunch.sol";
 import {LiquidityManager, Resources} from "../LiquidityManager.sol";
 import {TokenSuiteFactory} from "../TokenSuiteFactory.sol";
-import {ICreateX} from "../vendor/ICreateX.sol";
+import {ICreateX} from "../../vendor/ICreateX.sol";
 
 struct PoolState {
     // Resources

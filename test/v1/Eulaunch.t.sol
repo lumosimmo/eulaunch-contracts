@@ -10,12 +10,12 @@ import {QuoteLib} from "euler-swap/src/libraries/QuoteLib.sol";
 import {HookMiner, Hooks} from "euler-swap/test/utils/HookMiner.sol";
 import {IEulerSwap} from "euler-swap/src/interfaces/IEulerSwap.sol";
 import {EulaunchTestBase} from "./EulaunchTestBase.t.sol";
-import {Eulaunch} from "../src/Eulaunch.sol";
-import {LiquidityManager} from "../src/LiquidityManager.sol";
-import {TokenSuiteFactory} from "../src/TokenSuiteFactory.sol";
-import {BasicAsset} from "../src/tokens/BasicAsset.sol";
-import {Resources, CurveParams, VaultParams, ProtocolFeeParams} from "../src/LiquidityManager.sol";
-import {ERC20Params} from "../src/TokenSuiteFactory.sol";
+import {Eulaunch} from "src/v1/Eulaunch.sol";
+import {LiquidityManager} from "src/v1/LiquidityManager.sol";
+import {TokenSuiteFactory} from "src/v1/TokenSuiteFactory.sol";
+import {BasicAsset} from "src/tokens/BasicAsset.sol";
+import {Resources, CurveParams, VaultParams, ProtocolFeeParams} from "src/v1/LiquidityManager.sol";
+import {ERC20Params} from "src/v1/TokenSuiteFactory.sol";
 
 contract EulaunchTest is EulaunchTestBase {
     Eulaunch internal eulaunch;

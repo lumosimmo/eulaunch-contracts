@@ -2,7 +2,7 @@
 pragma solidity 0.8.27;
 
 import "forge-std/Script.sol";
-import {EulaunchLens} from "src/periphery/EulaunchLens.sol";
+import {EulaunchLens} from "src/v1/periphery/EulaunchLens.sol";
 
 contract DeployEulaunchLens is Script {
     address public constant eulerSwapPeriphery = 0xdAAF468d84DD8945521Ea40297ce6c5EEfc7003a;
