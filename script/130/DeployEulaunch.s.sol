@@ -2,8 +2,8 @@
 pragma solidity 0.8.27;
 
 import "forge-std/Script.sol";
-import {Eulaunch} from "src/Eulaunch.sol";
-import {TokenSuiteFactory} from "src/TokenSuiteFactory.sol";
+import {Eulaunch} from "src/v1/Eulaunch.sol";
+import {TokenSuiteFactory} from "src/v1/TokenSuiteFactory.sol";
 
 contract DeployEulaunch is Script {
     address public constant evkFactory = 0xbAd8b5BDFB2bcbcd78Cc9f1573D3Aad6E865e752;
