@@ -43,7 +43,7 @@ contract PiecewiseRouter {
         address receiver,
         uint256 amountOutMin,
         uint256 deadline
-    ) external {
+    ) external returns (uint256 amountOut) {
         require(deadline == 0 || deadline >= block.timestamp, DeadlineExpired());
         require(routes.length > 0, InvalidRoute());
 
@@ -53,10 +53,12 @@ contract PiecewiseRouter {
         for (uint256 i = 0; i < routes.length; i++) {
             swapExactInSingle(routes[i].pool, tokenIn, tokenOut, routes[i].amountIn);
         }
-        uint256 amountOut = ERC20(tokenOut).balanceOf(address(this));
+        amountOut = ERC20(tokenOut).balanceOf(address(this));
 
         require(amountOut >= amountOutMin, AmountOutLessThanMin());
         SafeTransferLib.safeTransfer(tokenOut, receiver, amountOut);
+
+        emit SwapExactInFlatRoutes(tokenIn, tokenOut, amountIn, amountOut, receiver);
     }
 
     /// @notice Handles a single swap step, settles tokens to the router.
