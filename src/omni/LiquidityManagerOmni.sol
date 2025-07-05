@@ -163,4 +163,15 @@ contract LiquidityManagerOmni is Ownable {
             vault1: vault1
         });
     }
+
+    /// @notice Executes an arbitrary transaction through the liquidity manager as a smart wallet.
+    /// @dev This function is only callable by the owner.
+    /// @param target The contract to call.
+    /// @param data The data to call the contract with.
+    /// @param value The value to send with the transaction.
+    // aderyn-ignore-next-line(centralization-risk)
+    function exec(address target, bytes calldata data, uint256 value) external payable onlyOwner {
+        (bool success, bytes memory reason) = target.call{value: value}(data);
+        require(success, string(reason));
+    }
 }
