@@ -67,6 +67,11 @@ contract LiquidityManagerOmni is Ownable {
         evc = _evc;
         eulerSwapFactory = _eulerSwapFactory;
         eulaunch = _eulaunch;
+        vault0 = _poolParams.vault0;
+        vault1 = _poolParams.vault1;
+        // aderyn-ignore-next-line(reentrancy-state-change)
+        token0 = IEVault(vault0).asset();
+        token1 = IEVault(vault1).asset();
 
         _initialize(_poolParams, _initialState, _salt);
         _initializeOwner(_owner);
