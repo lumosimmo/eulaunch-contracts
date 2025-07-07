@@ -10,6 +10,6 @@ While the pool is live, both underlying tokens will continuously accrue interest
 
 ### Unichain
 
-| Contract | Address |
-| -------- | ------- |
-| NA       | NA      |
+| Contract                                                                               | Address                                      |
+| -------------------------------------------------------------------------------------- | -------------------------------------------- |
+| [EulaunchOmni](https://uniscan.xyz/address/0x0Cde0A44F29dF9331B1fAdf3a464161Fe520f0e6) | `0x0Cde0A44F29dF9331B1fAdf3a464161Fe520f0e6` |
